@@ -96,7 +96,7 @@ with aba_rank:
         m[0].metric("Jogadores no ranking", br(len(rk), 0), help=f"com pelo menos {int(minimo)} partidas no recorte")
         m[1].metric("1º lugar", rk.index[0])
         m[2].metric(f"{c.nome} do 1º", fmt(c, rk.iloc[0][chave]))
-        m[3].metric("Média do circuito", fmt(c, media),
+        m[3].metric("Média do circuito", br(media, 1) if c.tipo == "n" else fmt(c, media),
                     help="Contagens: média por jogador do ranking. Demais critérios: razão das somas de todos "
                          "os jogadores do recorte (por isso vitórias = 50% e dominance ratio = 1).")
 
@@ -236,7 +236,8 @@ with aba_perfil:
         "Critério": fic["criterio"],
         "Valor": [fmt(an.CRIT[k], v) for k, v in zip(fic["chave"], fic["valor"])],
         "IC 95% (Wilson)": [fmt_ic(an.CRIT[k], li, ls) for k, li, ls in zip(fic["chave"], fic["ic_inf"], fic["ic_sup"])],
-        "Média do circuito": [fmt(an.CRIT[k], v) for k, v in zip(fic["chave"], fic["media"])],
+        "Média do circuito": [br(v, 1) if an.CRIT[k].tipo == "n" else fmt(an.CRIT[k], v)
+                              for k, v in zip(fic["chave"], fic["media"])],
         "Percentil": fic["percentil"].round(0),
         "Posição": [f"{a}º de {b}" if a else "—" for a, b in zip(fic["posicao"], fic["total"])],
     })
