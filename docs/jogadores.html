@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jogadores · Estatística no Tênis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/estilo.css?v=2">
+<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>
+<script src="assets/comum.js?v=2"></script>
+<script src="assets/descritiva.js?v=2"></script>
+<script src="assets/jogadores.js?v=2"></script>
+<style>
+  .barra-pct { position: relative; height: 10px; background: #ecebe5; border-radius: 6px; min-width: 90px; }
+  .barra-pct i { position: absolute; inset: 0 auto 0 0; border-radius: 6px; }
+  .fortes { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+  .fortes ul { margin: .3rem 0 0; padding-left: 1.1rem; }
+  input.busca { min-width: 280px; }
+</style>
+</head>
+<body>
+<header class="topo"><div id="quadra"></div><div class="topo-dentro">
+  <span class="etiqueta">Extra · Vestiário · fora da avaliação</span>
+  <h1>Quem é o melhor em cada aspecto do jogo?</h1>
+  <p>Todas as partidas do circuito principal da ATP de 2000 a 2025. Os números cobrem só esse recorte, <b>sem
+    Challengers, qualificatórios, Copa Davis nem Olimpíadas</b>, então diferem das estatísticas oficiais de carreira.</p>
+</div></header>
+<main class="conteudo" id="area">
+  <div class="abas" id="abas-j" style="margin-top:22px"><button class="on" data-a="rank">🏅 Ranking por critério</button>
+    <button data-a="perfil">🎾 Perfil do jogador</button></div>
+
+  <section class="painel-aba" data-p="rank">
+    <div class="filtros" style="position:static">
+      <div class="grupo"><span class="rot">Critério</span><select class="sel" id="r-crit"></select></div>
+      <div class="grupo"><span class="rot">Anos</span><select class="sel" id="r-a0"></select>–<select class="sel" id="r-a1"></select></div>
+      <div class="grupo"><span class="rot">Mínimo de partidas</span><input class="sel" id="r-min" type="number" value="100" min="1" step="10" style="width:90px"></div>
+      <div class="grupo"><span class="rot">Superfície</span><span id="r-sup"></span></div>
+      <div class="grupo"><span class="rot">Nível</span><span id="r-niv"></span></div>
+    </div>
+    <div id="r-placar"></div>
+    <div class="cartao" style="margin-top:14px"><div id="r-g" class="grafico" style="min-height:640px"></div>
+      <p class="nota" id="r-desc"></p></div>
+    <div id="r-comoler"></div>
+    <div class="cartao rolagem" style="max-height:480px;overflow:auto"><table class="t" id="r-t"></table></div>
+  </section>
+
+  <section class="painel-aba" data-p="perfil" hidden>
+    <div class="filtros" style="position:static">
+      <div class="grupo"><span class="rot">Jogador</span><input class="sel busca" id="p-nome" list="lista-nomes" value="Roger Federer">
+        <datalist id="lista-nomes"></datalist></div>
+      <div class="grupo"><span class="rot">Anos</span><select class="sel" id="p-a0"></select>–<select class="sel" id="p-a1"></select></div>
+      <div class="grupo"><span class="rot">Superfície</span><span id="p-sup"></span></div>
+    </div>
+    <div id="p-corpo"></div>
+  </section>
+</main>
+<script>
+document.getElementById("quadra").innerHTML = svgQuadra();
+ligarAbas(document.getElementById("area"), "#abas-j");
+(async () => {
+  const J = await carregar("jogadores");
+  const CR = J.criterios, CRIT = Object.fromEntries(CR.map(c => [c.chave, c]));
+  const erros = conferir(J);
+  console[erros.length ? "error" : "info"](erros.length ? `Divergências com o Python: ${erros.join(" | ")}` : "Jogadores: cálculos conferidos com o Python (OK)");
+  window.__checagemJogadores = erros;
+
+  const anos = []; for (let a = 2000; a <= 2025; a++) anos.push(a);
+  const opAnos = sel => anos.map(a => `<option ${a === sel ? "selected" : ""}>${a}</option>`).join("");
+  const chips = (el, lista, set, cores, aoMudar) => {
+    el.innerHTML = lista.map((r, v) => `<button class="chip ${set.has(v) ? "on" : ""}" data-v="${v}">` +
+      (cores ? `<span class="pt" style="background:${cores[r]}"></span>` : "") + `${r}</button>`).join("");
+    el.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => {
+      const v = +b.dataset.v; if (set.has(v)) { if (set.size > 1) set.delete(v); } else set.add(v);
+      b.classList.toggle("on", set.has(v)); aoMudar(); }));
+  };
+  const titulo = t => ({ text: t, x: 0, font: { size: 16, family: "Barlow Condensed" } });
+  const eixoC = c => ({ tickformat: c.tipo === "%" ? ".0%" : null });
+
+  /* ================= ranking ================= */
+  const R = { a0: 2000, a1: 2025, sup: new Set([0, 1, 2, 3]), niv: new Set([0, 1, 2, 3, 4]) };
+  const rc = document.getElementById("r-crit");
+  rc.innerHTML = CR.map(c => `<option value="${c.chave}">${c.grupo} · ${c.nome}</option>`).join("");
+  document.getElementById("r-a0").innerHTML = opAnos(2000); document.getElementById("r-a1").innerHTML = opAnos(2025);
+  document.getElementById("r-comoler").innerHTML = comoLer(`Cada linha é um jogador com pelo menos o mínimo de partidas no
+    recorte. Os valores são <b>razões de somas</b>: em "pontos ganhos no saque", somamos todos os pontos que ele venceu sacando e
+    dividimos por todos os pontos que sacou.<br><br><b>Por que o mínimo de partidas importa?</b> O valor de cada jogador é uma
+    estimativa feita com as partidas que ele jogou, e o <b>traço</b> é o <b>intervalo de confiança de 95% de Wilson</b>. Com
+    poucas partidas o intervalo fica largo e o "1º lugar" pode ser só sorte: baixe o mínimo para 10 e veja aparecerem líderes
+    desconhecidos, com intervalos enormes. É a mesma ideia de variabilidade amostral do 3º set. Usamos o IC de <b>Wilson</b> em
+    vez do de Wald (p̂ ± z·EP) porque ele continua válido perto de 0% ou 100% e com n pequeno, e nunca sai do intervalo [0, 1].
+    <br><br>Quando dois intervalos se sobrepõem bastante, os dados não permitem dizer com segurança quem é melhor. Taxas por game,
+    o dominance ratio e as contagens não têm IC de proporção.`);
+
+  function desenharRanking() {
+    const c = CRIT[rc.value], minimo = Math.max(1, +document.getElementById("r-min").value || 1);
+    const { tab, medias } = tabelaJogadores(J, [R.a0, R.a1], R.sup, R.niv, minimo);
+    const rk = rankear(tab, c);
+    if (!rk.length) { document.getElementById("r-placar").innerHTML = `<div class="aviso">Nenhum jogador com esses filtros. Reduza o mínimo de partidas ou amplie o recorte.</div>`;
+      Plotly.purge("r-g"); document.getElementById("r-t").innerHTML = ""; return; }
+    const media = medias[c.chave];
+    placar(document.getElementById("r-placar"), [
+      { rot: "Jogadores no ranking", num: br(rk.length, 0), sub: `com pelo menos ${minimo} partidas no recorte` },
+      { rot: "1º lugar", num: rk[0].nome },
+      { rot: `${c.nome} do 1º`, num: fmtC(c, rk[0][c.chave]) },
+      { rot: "Média do circuito", num: c.tipo === "n" ? br(media, 1) : fmtC(c, media), sub: c.tipo === "n" ? "média por jogador do ranking" : "razão das somas do recorte" },
+    ]);
+    const top = rk.slice(0, 20).reverse();
+    const hover = top.map(r => `<b>${r.nome}</b><br>${c.nome}: ${fmtC(c, r[c.chave])}` +
+      (c.tipo === "%" ? `<br>IC 95%: ${fmtIC(c, r[c.chave + "_ic_inf"], r[c.chave + "_ic_sup"])}` : "") + `<br>${br(r.partidas, 0)} partidas`);
+    const tr = c.tipo === "n"
+      ? [{ type: "bar", orientation: "h", x: top.map(r => r[c.chave]), y: top.map(r => r.nome), marker: { color: CORES.pop },
+           text: top.map(r => fmtC(c, r[c.chave])), textposition: "outside", cliponaxis: false, hovertext: hover, hoverinfo: "text" }]
+      : [{ x: top.map(r => r[c.chave]), y: top.map(r => r.nome), mode: "markers", hovertext: hover, hoverinfo: "text",
+           marker: { color: CORES.pop, size: 12, line: { color: "#fff", width: 1.5 } },
+           error_x: c.tipo === "%" ? { type: "data", symmetric: false, array: top.map(r => r[c.chave + "_ic_sup"] - r[c.chave]),
+             arrayminus: top.map(r => r[c.chave] - r[c.chave + "_ic_inf"]), color: CORES.pop, thickness: 2, width: 4 } : undefined }];
+    plot(document.getElementById("r-g"), tr, { height: 640, showlegend: false,
+      title: titulo(`Top 20 · ${c.nome}` + (c.tipo === "%" ? "<br><sup>ponto = valor do jogador · traço = IC 95% de Wilson</sup>" : !c.maior_melhor ? "<br><sup>menor é melhor</sup>" : "")),
+      shapes: [{ type: "line", xref: "x", yref: "paper", x0: media, x1: media, y0: 0, y1: 1, line: { color: CORES.neutra, dash: "dash", width: 2 } }],
+      annotations: [{ x: media, y: 1, yref: "paper", yanchor: "bottom", text: `média do circuito: ${c.tipo === "n" ? br(media, 1) : fmtC(c, media)}`, showarrow: false, font: { color: "#4b5650" } }],
+      xaxis: { ...eixoC(c), title: c.nome, showgrid: true, gridcolor: "rgba(137,135,129,.22)" }, yaxis: { showgrid: false, automargin: true },
+      margin: { l: 150, r: 40, t: 90, b: 50 } });
+    document.getElementById("r-desc").innerHTML = c.desc ? `<b>${c.nome}:</b> ${c.desc}.` : "";
+    document.getElementById("r-t").innerHTML = `<tr><th>Posição</th><th>Jogador</th><th>Partidas</th><th>V–D</th><th>${c.nome}</th>` +
+      (c.tipo === "%" ? "<th>IC 95% (Wilson)</th><th>Base (n)</th>" : "") + `<th>Percentil</th><th>Melhor ranking</th></tr>` +
+      rk.map(r => `<tr><td>${r.posicao}º</td><td>${r.nome}</td><td class="n">${br(r.partidas, 0)}</td><td class="n">${r.V}–${r.D}</td>
+        <td class="n"><b>${fmtC(c, r[c.chave])}</b></td>` +
+        (c.tipo === "%" ? `<td class="n">${fmtIC(c, r[c.chave + "_ic_inf"], r[c.chave + "_ic_sup"])}</td><td class="n">${br(r[c.chave + "_n"], 0)}</td>` : "") +
+        `<td><div class="barra-pct" title="${br(r.percentil, 0)}"><i style="width:${r.percentil}%;background:${CORES.pop}"></i></div></td>
+        <td class="n">${r.melhor_rank ?? "—"}º</td></tr>`).join("");
+  }
+  chips(document.getElementById("r-sup"), SUPS, R.sup, CORES.sup, desenharRanking);
+  chips(document.getElementById("r-niv"), NIVS, R.niv, null, desenharRanking);
+  ["r-crit", "r-min"].forEach(id => document.getElementById(id).addEventListener("change", desenharRanking));
+  ["r-a0", "r-a1"].forEach(id => document.getElementById(id).addEventListener("change", e => {
+    R[id.slice(2)] = +e.target.value; if (R.a0 > R.a1) [R.a0, R.a1] = [R.a1, R.a0]; desenharRanking(); }));
+  desenharRanking();
+
+  /* ================= perfil ================= */
+  const P = { a0: 2000, a1: 2025, sup: new Set([0, 1, 2, 3]) };
+  const car = carreira(J);
+  document.getElementById("lista-nomes").innerHTML = J.nomes.map((n, i) => `<option value="${n}">${br(car.get(i), 0)} partidas</option>`).join("");
+  document.getElementById("p-a0").innerHTML = opAnos(2000); document.getElementById("p-a1").innerHTML = opAnos(2025);
+  let critAnual = "vitorias";
+
+  function desenharPerfil() {
+    const nome = document.getElementById("p-nome").value.trim();
+    const corpo = document.getElementById("p-corpo");
+    if (!J.nomes.includes(nome)) { corpo.innerHTML = `<div class="aviso">Escolha um jogador da lista (digite parte do nome).</div>`; return; }
+    const p = perfil(J, nome, [P.a0, P.a1], P.sup);
+    if (p.vazio) { corpo.innerHTML = `<div class="aviso">${nome} não tem partidas nesse recorte.</div>`; return; }
+    const e = p.eu, fic = p.ficha;
+    const jogo = fic.filter(f => f.c.tipo !== "n" && f.percentil !== null).sort((a, b) => a.percentil - b.percentil);
+    const li = f => `<li><b>${f.c.nome}</b>: ${fmtC(f.c, f.valor)} · melhor que ${fmtPctl(f.percentil)} dos demais (${f.posicao}º de ${f.total})</li>`;
+    const recorte = (P.a0 === 2000 && P.a1 === 2025 ? "toda a base" : `${P.a0}–${P.a1}`) +
+      (P.sup.size === 4 ? "" : " · " + [...P.sup].map(s => SUPS[s].toLowerCase()).join(", "));
+    corpo.innerHTML = `
+      <div id="p-placar"></div>
+      <p class="nota">Recorte: <b>${recorte}</b> (${p.anos[0]}–${p.anos[1]} em quadra). Percentil e posição comparam ${nome} aos
+        <b>${p.nRef} jogadores</b> com pelo menos 100 partidas na base que têm 20 ou mais partidas nesse recorte.</p>
+      <h2>Pontos fortes e fracos</h2>
+      ${jogo.length >= 6 ? `<div class="fortes"><div class="cartao"><b>💪 Pontos fortes</b><ul>${jogo.slice(-3).reverse().map(li).join("")}</ul></div>
+        <div class="cartao"><b>🔧 Pontos fracos (relativos)</b><ul>${jogo.slice(0, 3).map(li).join("")}</ul></div></div>` : ""}
+      <div class="cartao" style="margin-top:14px"><div id="p-pctl" class="grafico" style="min-height:520px"></div></div>
+      ${comoLer(`O <b>percentil</b> diz que fração dos outros jogadores de referência ele supera naquele critério: 90 significa melhor
+        que 90% deles; 50 é o jogador típico. Barras <b>magenta</b> ficam acima da mediana; <b>cinza</b>, abaixo. Em duplas faltas por
+        game, menor é melhor, então o percentil já vem invertido. "Pontos fracos" são relativos: até um campeão tem aspectos em que é
+        apenas mediano.`)}
+      <h2>Ficha completa · critério a critério</h2>
+      <div class="cartao rolagem"><table class="t"><tr><th>Grupo</th><th>Critério</th><th>Valor</th><th>IC 95% (Wilson)</th>
+        <th>Média do circuito</th><th>Percentil</th><th>Posição</th></tr>
+        ${fic.map(f => `<tr><td>${f.c.grupo}</td><td>${f.c.nome}</td><td class="n"><b>${fmtC(f.c, f.valor)}</b></td>
+          <td class="n">${fmtIC(f.c, f.ic_inf, f.ic_sup)}</td><td class="n">${f.c.tipo === "n" ? br(f.media, 1) : fmtC(f.c, f.media)}</td>
+          <td>${f.percentil === null ? "—" : `<div class="barra-pct" title="${br(f.percentil, 0)}"><i style="width:${f.percentil}%;background:${f.percentil >= 50 ? CORES.top : CORES.demais}"></i></div>`}</td>
+          <td class="n">${f.posicao ? `${f.posicao}º de ${f.total}` : "—"}</td></tr>`).join("")}</table>
+        <p class="nota">Média do circuito: razão das somas de todos os jogadores no recorte (vitórias = 50% e dominance ratio = 1 por
+          construção); nas contagens, média por jogador de referência. O IC só existe para proporções.</p></div>
+      <h2>Cada aspecto por superfície</h2>
+      <div class="grade g2"><div class="cartao"><div id="p-sup-g" class="grafico" style="min-height:380px"></div></div>
+        <div class="cartao rolagem" style="max-height:440px;overflow:auto"><table class="t">
+          <tr><th>Critério</th>${p.porSup.map(s => `<th>${s.sup}</th>`).join("")}</tr>
+          <tr><td>Partidas</td>${p.porSup.map(s => `<td class="n">${br(s.partidas, 0)}</td>`).join("")}</tr>
+          <tr><td>V–D</td>${p.porSup.map(s => `<td class="n">${s.V}–${s.D}</td>`).join("")}</tr>
+          ${CR.map(c => `<tr><td>${c.nome}</td>${p.porSup.map(s => `<td class="n">${fmtC(c, s[c.chave])}</td>`).join("")}</tr>`).join("")}
+        </table></div></div>
+      <h2>Evolução por temporada</h2>
+      <div class="filtros" style="position:static"><div class="grupo"><span class="rot">Critério</span><select class="sel" id="p-crit">
+        ${CR.map(c => `<option value="${c.chave}" ${c.chave === critAnual ? "selected" : ""}>${c.grupo} · ${c.nome}</option>`).join("")}</select></div></div>
+      <div class="cartao"><div id="p-anual" class="grafico" style="min-height:400px"></div></div>
+      <div class="grade g2" style="margin-top:14px"><div class="cartao"><div id="p-part" class="grafico" style="min-height:320px"></div></div>
+        <div class="cartao"><div id="p-rank" class="grafico" style="min-height:320px"></div>
+          <p class="nota">O ranking é o do início de cada torneio, por isso o "melhor ranking do ano" é o melhor que ele tinha ao entrar em quadra naquela temporada.</p></div></div>
+      <h2>Títulos e finais</h2><div id="p-tit"></div>`;
+
+    placar(document.getElementById("p-placar"), [
+      { rot: "Partidas", num: br(e.partidas, 0), sub: `${p.anos[0]}–${p.anos[1]}` },
+      { rot: "V–D", num: `${e.V}–${e.D}` },
+      { rot: "Vitórias", num: pct(e.vitorias) },
+      { rot: "Títulos", num: br(e.titulos, 0), sub: `${e.titulos_gs} de Grand Slam` },
+      { rot: "Finais", num: br(e.finais, 0) },
+      { rot: "Melhor ranking", num: p.melhor ? `${p.melhor.rank}º` : "—", sub: p.melhor ? `atingido em ${p.melhor.ano}` : "" },
+    ]);
+    plot(document.getElementById("p-pctl"), [{ type: "bar", orientation: "h", x: jogo.map(f => f.percentil), y: jogo.map(f => f.c.nome),
+      marker: { color: jogo.map(f => f.percentil >= 50 ? CORES.top : CORES.demais) }, text: jogo.map(f => br(f.percentil, 0)),
+      textposition: "outside", cliponaxis: false, customdata: jogo.map(f => [fmtC(f.c, f.valor), `${f.posicao}º de ${f.total}`]),
+      hovertemplate: "<b>%{y}</b><br>valor: %{customdata[0]}<br>percentil %{x:.1f} · %{customdata[1]}<extra></extra>" }],
+      { height: 520, title: titulo(`${nome} · percentil em cada aspecto do jogo`),
+        shapes: [{ type: "line", xref: "x", yref: "paper", x0: 50, x1: 50, y0: 0, y1: 1, line: { color: CORES.neutra, dash: "dash", width: 2 } }],
+        annotations: [{ x: 50, y: 1, yref: "paper", yanchor: "bottom", text: "50 = jogador típico", showarrow: false, font: { color: "#4b5650" } }],
+        xaxis: { range: [0, 108], title: "Percentil (% dos jogadores de referência que ele supera)" }, yaxis: { automargin: true },
+        margin: { l: 220, r: 30, t: 80, b: 50 } });
+    const ps = p.porSup;
+    plot(document.getElementById("p-sup-g"), [{ type: "bar", x: ps.map(s => s.sup), y: ps.map(s => s.vitorias),
+      marker: { color: ps.map(s => CORES.sup[s.sup]) }, text: ps.map(s => pct(s.vitorias)), textposition: "inside", insidetextanchor: "end",
+      error_y: { type: "data", symmetric: false, array: ps.map(s => s.vitorias_ic_sup - s.vitorias), arrayminus: ps.map(s => s.vitorias - s.vitorias_ic_inf), color: CORES.neutra, thickness: 1.5 },
+      customdata: ps.map(s => [s.V, s.D]), hovertemplate: "<b>%{x}</b><br>%{y:.1%} de vitórias<br>%{customdata[0]}–%{customdata[1]}<extra></extra>" }],
+      { height: 380, title: titulo("Vitórias por superfície<br><sup>traço = IC 95% de Wilson</sup>"),
+        shapes: [{ type: "line", xref: "paper", x0: 0, x1: 1, y0: .5, y1: .5, line: { color: CORES.neutra, dash: "dash" } }],
+        yaxis: { tickformat: ".0%", range: [0, 1.05], title: "% de vitórias", gridcolor: "rgba(137,135,129,.22)" }, margin: { l: 60, r: 10, t: 70, b: 40 } });
+    const desenharAnual = () => {
+      const c = CRIT[document.getElementById("p-crit").value], a = p.anual; critAnual = c.chave;
+      const media = fic.find(f => f.c.chave === c.chave).media;
+      plot(document.getElementById("p-anual"), [{ x: a.map(r => r.ano), y: a.map(r => r[c.chave]), mode: "lines+markers",
+        line: { color: CORES.pop, width: 3 }, marker: { size: 8 }, customdata: a.map(r => r.partidas), hovertext: a.map(r => fmtC(c, r[c.chave])),
+        hovertemplate: "%{x}: %{hovertext} (%{customdata} partidas)<extra></extra>",
+        error_y: c.tipo === "%" ? { type: "data", symmetric: false, array: a.map(r => r[c.chave + "_ic_sup"] - r[c.chave]),
+          arrayminus: a.map(r => r[c.chave] - r[c.chave + "_ic_inf"]), color: CORES.pop, thickness: 1.2, width: 3 } : undefined }],
+        { height: 400, showlegend: false, title: titulo(`${nome} · ${c.nome} por temporada` + (c.tipo === "%" ? "<br><sup>traço = IC 95% de Wilson; anos com poucas partidas têm IC largo</sup>" : "")),
+          shapes: c.tipo !== "n" && media !== null ? [{ type: "line", xref: "paper", x0: 0, x1: 1, y0: media, y1: media, line: { color: CORES.neutra, dash: "dash", width: 2 } }] : [],
+          annotations: c.tipo !== "n" && media !== null ? [{ xref: "paper", x: 1, y: media, xanchor: "right", yanchor: "bottom", text: `média do circuito: ${fmtC(c, media)}`, showarrow: false, font: { color: "#4b5650" } }] : [],
+          yaxis: { ...eixoC(c), gridcolor: "rgba(137,135,129,.22)" }, xaxis: { dtick: a.length <= 15 ? 1 : 2 }, margin: { l: 60, r: 20, t: 80, b: 40 } });
+    };
+    document.getElementById("p-crit").addEventListener("change", desenharAnual);
+    desenharAnual();
+    plot(document.getElementById("p-part"), [{ type: "bar", x: p.anual.map(r => r.ano), y: p.anual.map(r => r.partidas), marker: { color: CORES.pop },
+      customdata: p.anual.map(r => [r.V, r.D]), hovertemplate: "%{x}: %{y} partidas (%{customdata[0]}–%{customdata[1]})<extra></extra>" }],
+      { height: 320, title: titulo("Partidas por temporada"), yaxis: { title: "partidas", gridcolor: "rgba(137,135,129,.22)" }, margin: { l: 60, r: 10, t: 50, b: 40 } });
+    plot(document.getElementById("p-rank"), [{ x: p.anual.map(r => r.ano), y: p.anual.map(r => r.melhor_rank), mode: "lines+markers",
+      line: { color: CORES.top, width: 3 }, marker: { size: 7 }, hovertemplate: "%{x}: %{y}º<extra>melhor ranking do ano</extra>" }],
+      { height: 320, title: titulo("Melhor ranking do ano"), yaxis: { autorange: "reversed", title: "posição (1 = topo)", gridcolor: "rgba(137,135,129,.22)" }, margin: { l: 60, r: 10, t: 50, b: 40 } });
+    const fins = p.finais, tit = fins.filter(f => f.venceu).sort((a, b) => b.ano - a.ano || a.torneio.localeCompare(b.torneio));
+    const porNiv = NIVS.map(n => [n, fins.filter(f => f.nivel === n && f.venceu).length, fins.filter(f => f.nivel === n).length]).filter(x => x[2]);
+    document.getElementById("p-tit").innerHTML = !fins.length ? `<p>${nome} não disputou finais nesse recorte.</p>` :
+      `<div class="grade g2"><div class="cartao"><table class="t"><tr><th>Nível</th><th>Títulos</th><th>Finais</th></tr>
+        ${porNiv.map(([n, t, f]) => `<tr><td>${n}</td><td class="n">${t}</td><td class="n">${f}</td></tr>`).join("")}</table></div>
+        <div class="cartao rolagem" style="max-height:380px;overflow:auto">${tit.length ? `<table class="t"><tr><th>Ano</th><th>Torneio</th><th>Nível</th><th>Superfície</th><th>Vice</th><th>Placar</th></tr>
+        ${tit.map(t => `<tr><td>${t.ano}</td><td>${t.torneio}</td><td>${t.nivel}</td><td>${t.sup}</td><td>${t.oponente}</td><td>${t.placar}</td></tr>`).join("")}</table>` : "Nenhum título no recorte."}</div></div>`;
+  }
+  chips(document.getElementById("p-sup"), SUPS, P.sup, CORES.sup, desenharPerfil);
+  document.getElementById("p-nome").addEventListener("change", desenharPerfil);
+  ["p-a0", "p-a1"].forEach(id => document.getElementById(id).addEventListener("change", e => {
+    P[id.slice(2)] = +e.target.value; if (P.a0 > P.a1) [P.a0, P.a1] = [P.a1, P.a0]; desenharPerfil(); }));
+  desenharPerfil();
+})();
+</script>
+</body>
+</html>

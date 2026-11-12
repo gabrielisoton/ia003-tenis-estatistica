@@ -175,6 +175,39 @@ def extras(pop: pd.DataFrame, am: pd.DataFrame) -> dict:
     }
 
 
+def jogadores(pop: pd.DataFrame) -> dict:
+    """Somas dos componentes de cada critério por jogador × ano × superfície × nível.
+
+    O site soma essas linhas conforme os filtros e calcula as razões no navegador, com as
+    mesmas fórmulas de app/analises.py. `checagem` traz valores calculados aqui no Python
+    para conferir o JavaScript.
+    """
+    lg = an.longo(pop)
+    por = ["jogador", "ano", "superficie", "nivel"]
+    s = an.somas(lg, por).reset_index()
+    nomes = lg["jogador"].value_counts().index.tolist()  # ordenado por nº de partidas
+    idx = {n: i for i, n in enumerate(nomes)}
+    col = {"j": s["jogador"].map(idx).tolist(), "ano": s["ano"].astype(int).tolist(),
+           "sup": codigo(s["superficie"], SUP), "niv": codigo(s["nivel"], NIV),
+           "mr": inteiros(s["melhor_rank"])}
+    for c in an.COMPONENTES:
+        col[c] = s[c].round().astype(int).tolist()
+    finais = pop[pop["rodada"] == "Final"][["ano", "torneio", "nivel", "superficie", "vencedor", "perdedor", "placar"]]
+    # checagem: ranking padrão (≥100 partidas, tudo) e o perfil do Federer
+    tab = an.tabela_jogadores(lg)
+    cheq = {c.chave: [[j, float(v)] for j, v in an.ranking_criterio(tab, c.chave)[c.chave].head(3).items()]
+            for c in an.CRITERIOS}
+    fed = an.perfil_jogador(lg, pop, "Roger Federer")["ficha"][["chave", "valor", "percentil", "posicao", "total"]]
+    return {
+        "nomes": nomes,
+        "criterios": [{"chave": c.chave, "nome": c.nome, "num": c.num, "den": c.den, "maior_melhor": c.maior_melhor,
+                       "tipo": c.tipo, "grupo": c.grupo, "desc": c.desc} for c in an.CRITERIOS],
+        "linhas": col,
+        "finais": finais.to_dict("list"),
+        "checagem": {"top3": cheq, "federer": fed.to_dict("records")},
+    }
+
+
 def rodadas_por_nivel(pop: pd.DataFrame) -> dict:
     """Em que rodada cada nível de torneio começa (explica por que a R32 domina)."""
     primeira = {}
@@ -203,6 +236,7 @@ def main() -> None:
     salvar("amostra.json", am_col)
     salvar("inferencia.json", inferencia(pop, am))
     salvar("extras.json", extras(pop, am))
+    salvar("jogadores.json", jogadores(pop))
 
 
 if __name__ == "__main__":

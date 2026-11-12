@@ -15,10 +15,10 @@ const PAGINAS = [
   ["amostra.html", "2º set", "Amostra"],
   ["inferencia.html", "3º set", "Inferência"],
 ];
-// Extras para fãs de tênis (fora da avaliação) — entram aqui quando as páginas existirem
+// Extras para fãs de tênis (fora da avaliação)
 const EXTRAS = [
-  // ["explorar.html", "Tie-break", "Explorar"],
-  // ["jogadores.html", "Vestiário", "Jogadores"],
+  ["explorar.html", "Tie-break", "Explorar"],
+  ["jogadores.html", "Vestiário", "Jogadores"],
 ];
 
 /* ---------------- dados ---------------- */
