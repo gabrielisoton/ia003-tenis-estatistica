@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inferência · Estatística no Tênis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.css">
+<link rel="stylesheet" href="assets/estilo.css">
+<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.js"></script>
+<script src="assets/comum.js"></script>
+<script src="assets/descritiva.js"></script>
+<script src="assets/inferencia.js"></script>
+</head>
+<body>
+<header class="topo"><div id="quadra"></div><div class="topo-dentro">
+  <span class="etiqueta">3º set · Painel 3</span>
+  <h1>Inferência estatística e comparação com a população</h1>
+  <p>Intervalos de confiança e testes usam <b>somente a amostra</b> (AAS, n = 382). O parâmetro populacional é
+    calculado diretamente e aparece só para comparação.</p>
+</div></header>
+<main class="conteudo">
+  <div class="aula" style="margin-top:20px"><strong>🎯 O que estamos fazendo aqui? (a ideia em 4 passos)</strong>
+    <ol style="margin:.3rem 0">
+      <li><b>Fingimos que não conhecemos a população.</b> Na vida real quase nunca temos todos os dados, só uma amostra.</li>
+      <li><b>Com as 382 partidas sorteadas, estimamos um número da população</b>, como a % de vitórias do favorito.
+        Damos um <b>palpite</b> (a estimativa pontual) e uma <b>margem</b> em volta dele (o intervalo de confiança, IC).</li>
+      <li><b>Testamos uma afirmação</b> (a hipótese H₀, por exemplo "o favorito vence só 50%"). O <b>valor-p</b> responde:
+        <i>se H₀ fosse verdade, qual a chance de uma amostra mostrar algo tão extremo quanto o que vimos?</i> Se essa
+        chance for menor que α, consideramos H₀ improvável e a <b>rejeitamos</b>.</li>
+      <li><b>Conferimos com a população.</b> Como temos as 66.819 partidas, dá para ver se o IC "acertou" o valor real e
+        se a decisão do teste foi correta. Isso é impossível na prática, mas ótimo para aprender.</li>
+    </ol></div>
+
+  <div class="filtros" style="position:static"><div class="grupo"><span class="rot">Nível de significância (α)</span>
+    <button class="chip" data-alfa="0.01">1%</button><button class="chip on" data-alfa="0.05">5%</button>
+    <button class="chip" data-alfa="0.1">10%</button></div>
+    <span class="nota">Os ICs são de 95%. O padrão do trabalho é α = 5%.</span></div>
+
+  <div id="area">
+    <div class="abas" id="abas-h"></div>
+    <div id="paineis-h"></div>
+  </div>
+</main>
+<script>
+document.getElementById("quadra").innerHTML = svgQuadra();
+(async () => {
+  const [inf, pop] = await Promise.all([carregar("inferencia"), carregar("populacao")]);
+  const hs = inf.hipoteses;
+  const abas = [...hs.map(h => [h.id, h.aba]), ["resumo", "Resumo"], ["sim", "Variabilidade amostral"],
+                ["bonus", "Bônus"], ["lim", "Limitações"]];
+  const area = document.getElementById("area");
+  const caixas = document.getElementById("paineis-h");
+  document.getElementById("abas-h").innerHTML = abas.map(([id, rot], i) => `<button class="${i ? "" : "on"}" data-a="${id}">${rot}</button>`).join("");
+  caixas.outerHTML = abas.map(([id], i) => `<section class="painel-aba" data-p="${id}" ${i ? "hidden" : ""}><div id="p-${id}"></div></section>`).join("");
+  ligarAbas(area, "#abas-h");
+
+  const desenhar = () => {
+    hs.forEach(h => cartaoHipotese(document.getElementById(`p-${h.id}`), h));
+    document.getElementById("p-resumo").innerHTML = `<div class="cartao rolagem" id="t-resumo"></div>
+      <div class="aula"><strong>Como ler esta tabela</strong><ul>
+        <li><b>Estimativa pontual × IC:</b> a estimativa é o melhor palpite único. O IC é a faixa de valores plausíveis para o
+          parâmetro: ele é centrado na estimativa e sua largura reflete o erro-padrão.</li>
+        <li><b>IC × teste:</b> em um teste bilateral, rejeitar H₀ ao nível de 5% equivale a o valor de H₀ cair <b>fora</b> do IC de 95%.</li>
+        <li><b>Amostra × população:</b> como conhecemos a população, dá para verificar se cada IC "acertou". Na prática nunca sabemos
+          isso. O que o método garante é que <b>95% dos ICs construídos assim</b> contêm o parâmetro (veja a aba <i>Variabilidade amostral</i>).</li>
+        <li><b>Não rejeitar ≠ aceitar:</b> quando o valor real está muito perto de H₀, o teste com n = 382 não tem poder para detectar
+          a diferença. É um erro tipo II esperado, não uma falha do método.</li></ul></div>`;
+    tabelaResumo(document.getElementById("t-resumo"), hs);
+    bonus(document.getElementById("p-bonus"), inf.bonus);
+  };
+  desenhar();
+
+  // simulação
+  document.getElementById("p-sim").innerHTML = `
+    <h3>Se tivéssemos sorteado outra amostra?</h3>
+    <p>A simulação sorteia várias AAS do mesmo tamanho a partir da população e calcula o IC 95% de cada uma. Cerca de 95% delas
+      devem conter o parâmetro real: esse é o significado de "95% de confiança". A confiança é no <b>método</b>, não em um
+      intervalo específico.</p>
+    <div class="filtros" style="position:static"><div class="grupo"><span class="rot">Parâmetro</span>
+      <select class="sel" id="sim-h">${hs.map(h => `<option value="${h.id}">${h.aba}</option>`).join("")}</select></div>
+      <div class="grupo"><span class="rot">Amostras</span><select class="sel" id="sim-r">${[20, 50, 100, 200].map(r => `<option ${r === 100 ? "selected" : ""}>${r}</option>`).join("")}</select></div>
+      <div class="grupo"><span class="rot">Semente</span><input class="sel" id="sim-s" type="number" value="1" style="width:80px"></div>
+      <button class="chip on" id="sim-go">Sortear de novo</button></div>
+    <div id="sim-placar"></div><div class="cartao"><div id="sim-g" class="grafico"></div></div>`;
+  const simular_ = () => {
+    const h = hs.find(x => x.id === document.getElementById("sim-h").value);
+    const valores = valoresHipotese(h, pop), param = valores.reduce((a, b) => a + b, 0) / valores.length;
+    const ics = simular(valores, h.n, +document.getElementById("sim-r").value, h.tipo, h.critico_simulacao, +document.getElementById("sim-s").value);
+    const taxa = grafCobertura(document.getElementById("sim-g"), ics, param, h.tipo === "proporção", FMT[h.id]);
+    placar(document.getElementById("sim-placar"), [
+      { rot: "ICs que contêm o valor real", num: pct(taxa), sub: "esperado: cerca de 95%" },
+      { rot: "Tamanho de cada amostra", num: h.n, sub: "igual ao da amostra real" },
+      { rot: "Valor real (população)", num: FMT[h.id](param) },
+    ]);
+  };
+  ["sim-h", "sim-r", "sim-s"].forEach(id => document.getElementById(id).addEventListener("change", simular_));
+  document.getElementById("sim-go").addEventListener("click", () => {
+    const s = document.getElementById("sim-s"); s.value = +s.value + 1; simular_(); });
+  simular_();
+
+  document.getElementById("p-lim").innerHTML = `<div class="cartao"><h3 style="margin-top:0">Limitações da análise</h3><ul>
+    <li><b>Independência:</b> a AAS trata cada partida como unidade, mas partidas do mesmo jogador ou torneio não são totalmente
+      independentes (Federer, Nadal e Djokovic aparecem em centenas delas). Os erros-padrão podem estar um pouco subestimados.</li>
+    <li><b>Assimetria:</b> duração e aces têm cauda longa à direita (Isner × Mahut, Wimbledon 2010: 665 minutos e 216 aces). O TCL
+      resolve a inferência para a média com n = 382, mas a <b>mediana</b> descreve melhor a partida típica.</li>
+    <li><b>Dados ausentes:</b> cerca de 1% das partidas não tem duração ou estatísticas de saque. As análises usam os casos
+      disponíveis, assumindo que a falta é aleatória.</li>
+    <li><b>Definição da população:</b> excluímos W/O e abandonos. As conclusões valem para <b>partidas concluídas do circuito
+      principal</b>, não para Challengers, qualificatórios ou o circuito feminino.</li>
+    <li><b>Um único sorteio:</b> cada conclusão vem de uma amostra. Outra semente daria estimativas um pouco diferentes (veja a aba
+      <i>Variabilidade amostral</i>), e decisões perto do limite de α podem mudar.</li>
+    <li><b>Mudança ao longo do tempo:</b> 26 temporadas misturam eras diferentes (bolas, quadras e estilos de jogo). Os parâmetros
+      são médias do período, não de um ano específico.</li>
+    <li><b>Subgrupos pequenos:</b> a amostra foi dimensionada para proporções da base inteira. Em subgrupos (grama ≈ 8% da
+      amostra, melhor de 5 ≈ 17%) a precisão é bem menor, como mostram os testes bônus.</li></ul></div>`;
+
+  document.querySelectorAll("[data-alfa]").forEach(b => b.addEventListener("click", () => {
+    ALFA = +b.dataset.alfa;
+    document.querySelectorAll("[data-alfa]").forEach(x => x.classList.toggle("on", x === b));
+    desenhar();
+  }));
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Estatística no Tênis</title>
+<meta name="description" content="Inferência estatística no circuito ATP 2000–2025: população × amostra aleatória simples.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.css">
+<link rel="stylesheet" href="assets/estilo.css">
+<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.js"></script>
+<script src="assets/comum.js"></script>
+</head>
+<body>
+<header class="hero">
+  <div id="quadra"></div>
+  <div class="hero-dentro">
+    <span class="etiqueta">IA003 · Probabilidade e Estatística para IA · UFRGS</span>
+    <h1>Quem vence no tênis?<br><em>Inferência estatística</em> no circuito ATP</h1>
+    <p>Comparamos <b>todas as 66.819 partidas</b> do circuito principal entre 2000 e 2025 com uma
+      <b>amostra aleatória simples de 382</b>. Os parâmetros da população são calculados diretamente; os
+      intervalos de confiança e os testes usam <b>só a amostra</b>. Como conhecemos a população, dá para ver se a
+      amostra acertou.</p>
+  </div>
+</header>
+
+<main class="conteudo">
+  <div id="placar" style="margin-top:-28px"></div>
+
+  <h2>A partida em três sets</h2>
+  <div class="grade g3" id="sets"></div>
+
+  <div class="rede"></div>
+  <h2>1. A base de dados</h2>
+  <div class="grade g2">
+    <div class="cartao">
+      <h3>Fonte e contexto</h3>
+      <p><b>Fonte:</b> <a href="https://github.com/Tennismylife/TML-Database">TML-Database (Tennismylife)</a>,
+        base pública de partidas da ATP desde 1968, com um arquivo por temporada, mantida pelo projeto
+        <a href="https://stats.tennismylife.org/tennis-match-database">Tennismylife</a>.</p>
+      <p><b>Esquema:</b> o mesmo dicionário de dados da base <i>tennis_atp</i> de Jeff Sackmann (Tennis Abstract),
+        referência em analytics de tênis. Essa base foi retirada do GitHub pelo autor em 2026.</p>
+      <p><b>Conteúdo:</b> resultado e placar, perfil dos jogadores (idade, altura, mão, país, ranking) e
+        estatísticas de saque de cada partida.</p>
+    </div>
+    <div class="cartao">
+      <h3>População e unidade amostral</h3>
+      <p><b>População:</b> todas as partidas de simples do circuito principal da ATP (Grand Slams, ATP Finals,
+        Masters 1000, ATP 500 e 250) <b>concluídas</b> entre 2000 e 2025.</p>
+      <p><b>Unidade amostral:</b> a partida.</p>
+      <div class="funil" id="funil"></div>
+      <p style="font-size:.9rem;color:var(--tinta-2)">Ficaram de fora a Copa Davis, as Olimpíadas, os eventos por
+        equipes ou de exibição e as partidas não concluídas (W/O, abandono, desclassificação).</p>
+    </div>
+  </div>
+
+  <h3>Variáveis selecionadas</h3>
+  <div class="cartao rolagem"><table class="t" id="variaveis"></table></div>
+
+  <div class="rede"></div>
+  <h2>2. Dimensionamento e sorteio da amostra</h2>
+  <div class="grade g2">
+    <div class="cartao">
+      <h3>Quantas partidas sortear?</h3>
+      <p>Tamanho para estimar uma proporção (a mesma fórmula da calculadora USP/Bauru):</p>
+      <ul>
+        <li><b>Confiança de 95%</b> (z = 1,96), o padrão em pesquisas.</li>
+        <li><b>Margem de erro de 5 pontos percentuais.</b></li>
+        <li><b>p = 0,5</b>: sem informação prévia, é o valor que <b>maximiza</b> p(1−p). É o caso mais conservador.</li>
+      </ul>
+      <div id="f1"></div><div id="f2"></div>
+    </div>
+    <div class="cartao">
+      <h3>Como foi o sorteio</h3>
+      <ol>
+        <li>Cada partida recebeu um número de 1 a <span id="N"></span>.</li>
+        <li>O computador sorteou <b><span class="nAm"></span> partidas sem reposição</b>
+          (<code>pandas.DataFrame.sample</code>) com a <b>semente fixa 15112026</b>, para que qualquer pessoa
+          reproduza exatamente o mesmo sorteio.</li>
+        <li>Cada partida teve a <b>mesma chance</b> de entrar: <span id="incl"></span>.</li>
+      </ol>
+      <div class="aula"><strong>Por que sortear?</strong>Se escolhêssemos as partidas "a dedo" (por exemplo só finais
+        ou só jogos famosos), a amostra teria um <b>viés</b>. O sorteio garante que qualquer diferença entre amostra e
+        população seja só <b>acaso</b>, e o acaso a estatística sabe medir.</div>
+    </div>
+  </div>
+
+  <div class="rede"></div>
+  <h2>Prévia do 3º set: o favorito vence mesmo?</h2>
+  <div class="cartao">
+    <p id="previa-txt"></p>
+    <div id="previa" class="grafico" style="min-height:210px"></div>
+    <p id="previa-selo"></p>
+  </div>
+</main>
+
+<script>
+document.getElementById("quadra").innerHTML = svgQuadra();
+(async () => {
+  const meta = await carregar("meta");
+  const inf = await carregar("inferencia");
+  const r = meta.resumo, t = meta.tamanho;
+
+  placar(document.getElementById("placar"), [
+    { rot: "Partidas na população", num: br(r.N, 0), sub: "N" },
+    { rot: "Partidas sorteadas", num: t.n, sub: "amostra aleatória simples" },
+    { rot: "Temporadas", num: "26", sub: r.periodo },
+    { rot: "Jogadores", num: br(r.n_jogadores, 0), sub: `${br(r.n_torneios, 0)} edições de torneios` },
+  ]);
+
+  const sets = [
+    ["populacao.html", "1º set", "População", "Retrato completo das 66.819 partidas: superfícies, duração, aces, ranking.", CORES.pop],
+    ["amostra.html", "2º set", "Amostra", "As 382 partidas sorteadas, comparadas lado a lado com a população.", CORES.amostra],
+    ["inferencia.html", "3º set", "Inferência", "Intervalos de confiança e testes de hipóteses, conferidos com o valor real.", "#14211b"],
+  ];
+  document.getElementById("sets").innerHTML = sets.map(([h, n, t1, d, c]) =>
+    `<a class="cartao set" href="${h}"><span class="faixa" style="background:${c}"></span>
+      <div class="n">${n}</div><h3>${t1}</h3><div style="color:var(--tinta-2)">${d}</div></a>`).join("");
+
+  const e = r.etapas_filtro;
+  document.getElementById("funil").innerHTML = [
+    ["Partidas brutas 2000–2025", e.partidas_brutas_2000_2025],
+    ["Só circuito principal", e.apos_filtro_nivel],
+    ["Só partidas concluídas = população", e.apos_excluir_nao_concluidas],
+  ].map(([rot, v], i) => `<div class="passo" style="margin-left:${i * 14}px;margin-right:${i * 14}px">
+      <span>${rot}</span><b>${br(v, 0)}</b></div>`).join("");
+
+  const vars = [
+    ["superficie", "Qualitativa nominal", "Dura, saibro, grama ou carpete"],
+    ["nivel", "Qualitativa ordinal", "Grand Slam, ATP Finals, Masters 1000, ATP 500, ATP 250"],
+    ["melhor_de", "Qualitativa", "Melhor de 3 ou de 5 sets"],
+    ["rodada", "Qualitativa ordinal", "Da 1ª rodada à final"],
+    ["mao_vencedor", "Qualitativa nominal", "Destro ou canhoto"],
+    ["favorito_venceu", "Qualitativa binária (derivada)", "O jogador com melhor ranking venceu?"],
+    ["set_decisivo", "Qualitativa binária (derivada)", "A partida foi ao 3º set (melhor de 3) ou ao 5º (melhor de 5)?"],
+    ["minutos", "Quantitativa (inteira)", "Duração da partida em minutos"],
+    ["aces_total", "Quantitativa discreta", "Aces dos dois jogadores somados"],
+    ["duplas_faltas_total", "Quantitativa discreta", "Duplas faltas dos dois jogadores somadas"],
+    ["idade_vencedor", "Quantitativa contínua", "Idade do vencedor no torneio (anos)"],
+    ["altura_vencedor", "Quantitativa (inteira)", "Altura do vencedor (cm)"],
+    ["dif_ranking", "Quantitativa discreta (derivada)", "Diferença de posições no ranking ATP entre os jogadores"],
+  ];
+  document.getElementById("variaveis").innerHTML = `<tr><th>Variável</th><th>Tipo</th><th>Descrição</th></tr>` +
+    vars.map(v => `<tr><td><code>${v[0]}</code></td><td>${v[1]}</td><td>${v[2]}</td></tr>`).join("");
+
+  katexEm(document.getElementById("f1"),
+    String.raw`n_0=\frac{z^2\,p(1-p)}{E^2}=\frac{1{,}96^2\cdot 0{,}25}{0{,}05^2}\approx ${tx(br(t.n0_pop_infinita))}`);
+  katexEm(document.getElementById("f2"),
+    String.raw`n=\frac{n_0}{1+\frac{n_0-1}{N}}=\frac{${tx(br(t.n0_pop_infinita))}}{1+\frac{${tx(br(t.n0_pop_infinita - 1))}}{${tx(br(t.N, 0))}}}\approx ${tx(br(t.n_corrigido))}\;\Rightarrow\; n=${t.n}`);
+  document.getElementById("N").textContent = br(t.N, 0);
+  document.querySelectorAll(".nAm").forEach(x => x.textContent = t.n);
+  document.getElementById("incl").textContent = `${t.n} / ${br(t.N, 0)} ≈ ${pct(t.n / t.N, 2)}`;
+
+  const p1 = inf.hipoteses.find(h => h.id === "P1");
+  document.getElementById("previa-txt").innerHTML = `Se o ranking não valesse nada, o favorito venceria 50% das
+    partidas. Na amostra ele venceu <b>${pct(p1.estimativa)}</b>, com intervalo de confiança de 95% entre
+    <b>${pct(p1.ic_inf)}</b> e <b>${pct(p1.ic_sup)}</b>. E o valor verdadeiro, calculado com as ${br(p1.N_sub, 0)}
+    partidas da população? Como no Hawk-Eye: a bola caiu dentro?`;
+  hawkeye(document.getElementById("previa"), { est: p1.estimativa, li: p1.ic_inf, ls: p1.ic_sup, h0: p1.h0,
+    param: p1.parametro, fmt: v => pct(v), proporcao: true });
+  document.getElementById("previa-selo").innerHTML = seloHawkeye(p1.contem);
+})();
+</script>
+</body>
+</html>
