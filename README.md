@@ -5,7 +5,14 @@ Atividade avaliativa final da disciplina **IA003 — Probabilidade e Estatístic
 O projeto compara **toda a população** de partidas do circuito principal da ATP (N = 66.819) com uma **amostra aleatória simples** de n = 382 partidas. Os parâmetros populacionais são calculados diretamente; os intervalos de confiança e os testes de hipóteses usam **somente a amostra**.
 
 ## Links de entrega
-- **Painéis (Streamlit):** _a preencher após o deploy_
+**Site (HTML, GitHub Pages)**
+- Base e amostragem: https://gabrielisoton.github.io/ia003-tenis-estatistica/
+- Painel 1 · População: https://gabrielisoton.github.io/ia003-tenis-estatistica/populacao.html
+- Painel 2 · Amostra: https://gabrielisoton.github.io/ia003-tenis-estatistica/amostra.html
+- Painel 3 · Inferência: https://gabrielisoton.github.io/ia003-tenis-estatistica/inferencia.html
+
+**App (Streamlit Community Cloud):** https://ia003-tenis-estatistica.streamlit.app. Os painéis 1–3 ficam no menu lateral, e as páginas "Extra" (Explorar e Jogadores) estão fora da avaliação.
+
 - **Vídeo (YouTube):** _a preencher_
 - **Base original:** [TML-Database (Tennismylife)](https://github.com/Tennismylife/TML-Database). O esquema de colunas é o mesmo da base *tennis_atp* de Jeff Sackmann (Tennis Abstract), que foi removida do GitHub em 2026.
 
