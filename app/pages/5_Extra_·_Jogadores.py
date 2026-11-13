@@ -1,4 +1,6 @@
 """Extra · Jogadores — líderes de todos os critérios, ranking por critério e perfil individual (população inteira)."""
+import importlib
+
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
@@ -8,6 +10,10 @@ import analises as an
 import dados
 import graficos as g
 from dados import br, pct
+
+# O Streamlit (inclusive no Cloud, depois de um push) não recarrega módulos locais já importados:
+# sem isto, a página nova rodaria com uma versão antiga de analises.py em memória.
+an = importlib.reload(an)
 
 st.set_page_config(page_title="Extra · Jogadores", page_icon="🎾", layout="wide")
 st.info("**Extra · fora da avaliação da disciplina.** Página para quem gosta de tênis: usa a população "
