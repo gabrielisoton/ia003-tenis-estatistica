@@ -1,5 +1,7 @@
 """Extra · Jogadores — líderes de todos os critérios, ranking por critério e perfil individual (população inteira)."""
+import hashlib
 import importlib
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -14,6 +16,19 @@ from dados import br, pct
 # O Streamlit (inclusive no Cloud, depois de um push) não recarrega módulos locais já importados:
 # sem isto, a página nova rodaria com uma versão antiga de analises.py em memória.
 an = importlib.reload(an)
+
+
+@st.cache_resource
+def _versao_vista() -> dict:
+    return {"md5": None}
+
+
+# o st.cache_data guarda resultados calculados pela versão anterior de analises.py (a chave do cache só olha o
+# código desta página): quando analises.py muda, limpa o cache uma vez para não servir tabelas antigas.
+_md5 = hashlib.md5(Path(an.__file__).read_bytes()).hexdigest()
+if _versao_vista()["md5"] != _md5:
+    st.cache_data.clear()
+    _versao_vista()["md5"] = _md5
 
 st.set_page_config(page_title="Extra · Jogadores", page_icon="🎾", layout="wide")
 st.info("**Extra · fora da avaliação da disciplina.** Página para quem gosta de tênis: usa a população "
