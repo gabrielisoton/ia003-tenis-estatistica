@@ -1,6 +1,7 @@
 /* Extra · Jogadores — ranking por critério e perfil individual.
    Mesmas fórmulas de app/analises.py: razão das somas, IC de Wilson, percentil e posição.
-   `conferir()` compara com os valores calculados no Python (jogadores.json → checagem). */
+   `conferir()` compara com os valores calculados no Python (jogadores.json → checagem).
+   Os filtros usam os rótulos em português (SUPS, NIVS, igual aos dados); o que aparece na tela passa por tr()/T(). */
 
 const Z975 = 1.959963984540054;
 const SUPS = ["Dura", "Saibro", "Grama", "Carpete"];
@@ -48,7 +49,7 @@ function fmtC(c, v) {
   if (v === null || v === undefined || Number.isNaN(v)) return "—";
   return c.tipo === "%" ? pct(v) : c.tipo === "taxa" ? br(v, 3) : c.tipo === "razao" ? br(v, 2) : br(v, 0);
 }
-const fmtIC = (c, li, ls) => c.tipo !== "%" || li === null || li === undefined ? "—" : `${pct(li)} a ${pct(ls)}`;
+const fmtIC = (c, li, ls) => c.tipo !== "%" || li === null || li === undefined ? "—" : `${pct(li)} ${T("a", "to")} ${pct(ls)}`;
 const fmtPctl = p => br(p, (p > 99 && p < 100) || (p > 0 && p < 1) ? 1 : 0) + "%";
 
 /* posição e percentil — idênticos a analises.posicao */
@@ -134,8 +135,10 @@ function maxPartidas(J, anos, sups, nivs) {
   let mx = 0; for (const s of somar(L, f, i => L.j[i]).values()) mx = Math.max(mx, s.partida);
   return mx;
 }
-const avisoVazio = (minimo, mx) => `<div class="aviso">${mx ? `Ninguém tem ${minimo} partidas nesse recorte: quem mais jogou
-  fez ${mx}. Reduza o mínimo de partidas ou amplie o recorte.` : "Não há partidas nesse recorte."}</div>`;
+const avisoVazio = (minimo, mx) => `<div class="aviso">${mx ? T(`Ninguém tem ${minimo} partidas nesse recorte: quem mais jogou
+  fez ${mx}. Reduza o mínimo de partidas ou amplie o recorte.`, `Nobody has ${minimo} matches in this selection: the most
+  anyone played is ${mx}. Lower the minimum number of matches or widen the selection.`)
+  : T("Não há partidas nesse recorte.", "There are no matches in this selection.")}</div>`;
 
 /* líderes de todos os critérios — idêntico a analises.lideres:
    pódio (3 primeiros, vantagem do 1º, liderança isolada × empate técnico pelo IC de Wilson) e
@@ -162,9 +165,10 @@ function lideres(tab, CR, top = 10) {
       if (!conta.has(r.nome)) conta.set(r.nome, { nome: r.nome, ouro: 0, prata: 0, bronze: 0, top: 0, criterios: [], partidas: r.partidas,
         ouro_criterios: [], prata_criterios: [], bronze_criterios: [], top_criterios: [] });
       const d = conta.get(r.nome);
-      if (k < 3) { d[MEDALHAS[k]]++; d[MEDALHAS[k] + "_criterios"].push(c.nome); }
-      if (k === 0) d.criterios.push(c.nome);
-      d.top++; d.top_criterios.push(`${c.nome} (${k + 1}º)`);
+      const nome = tr(c.nome);  // as listas só servem para exibir
+      if (k < 3) { d[MEDALHAS[k]]++; d[MEDALHAS[k] + "_criterios"].push(nome); }
+      if (k === 0) d.criterios.push(nome);
+      d.top++; d.top_criterios.push(`${nome} (${ordinal(k + 1)})`);
     });
   }
   const med = [...conta.values()];
@@ -203,7 +207,7 @@ function combobox(input, opcoes, detalhe, aoEscolher, maxItens = 150) {
   input.parentNode.insertBefore(caixa, input);
   caixa.append(input);
   const seta = document.createElement("button");
-  seta.type = "button"; seta.className = "combo-seta"; seta.setAttribute("aria-label", "Abrir lista"); seta.textContent = "▾";
+  seta.type = "button"; seta.className = "combo-seta"; seta.setAttribute("aria-label", T("Abrir lista", "Open list")); seta.textContent = "▾";
   const lista = document.createElement("ul");
   lista.className = "combo-lista"; lista.setAttribute("role", "listbox"); lista.hidden = true;
   caixa.append(seta, lista);
@@ -216,8 +220,8 @@ function combobox(input, opcoes, detalhe, aoEscolher, maxItens = 150) {
     for (let i = 0; i < opcoes.length && itens.length < maxItens; i++) if (!q || chaves[i].includes(q)) itens.push(i);
     lista.innerHTML = itens.length
       ? itens.map((i, k) => `<li role="option" data-k="${k}" class="${opcoes[i] === atual ? "sel" : ""}">${opcoes[i]}<small>${detalhe(i)}</small></li>`).join("")
-        + (itens.length === maxItens ? `<li class="vazio">Digite para refinar a busca…</li>` : "")
-      : `<li class="vazio">Nenhum jogador com "${input.value}"</li>`;
+        + (itens.length === maxItens ? `<li class="vazio">${T("Digite para refinar a busca…", "Type to narrow the search…")}</li>` : "")
+      : `<li class="vazio">${T("Nenhum jogador com", "No player matching")} "${input.value}"</li>`;
     foco = Math.max(0, itens.findIndex(i => opcoes[i] === atual));
     lista.hidden = false; input.setAttribute("aria-expanded", "true"); marcar();
   };

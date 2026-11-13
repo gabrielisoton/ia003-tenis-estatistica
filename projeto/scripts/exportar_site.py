@@ -5,6 +5,7 @@ Saídas:
 - populacao.json   colunas compactas da população (página "O circuito")
 - extras.json      linha do tempo, ranking × vitória do favorito, Top N × demais
 - jogadores.json   somas por jogador × ano × superfície × nível (filtros no navegador) e checagens
+- en.json          rótulos dos dados em inglês (nucleo/idiomas.EN, o mesmo dicionário do app)
 """
 import sys
 from pathlib import Path
@@ -15,6 +16,7 @@ AQUI = Path(__file__).resolve().parents[1]           # pasta do projeto
 sys.path.insert(0, str(AQUI.parent))                 # raiz do repositório
 from nucleo import analises as an  # noqa: E402
 from nucleo import exportacao as ex  # noqa: E402
+from nucleo import idiomas  # noqa: E402
 
 SAIDA = AQUI / "site" / "data"
 CONF = 0.95
@@ -85,6 +87,7 @@ def main() -> None:
     ex.salvar(SAIDA, "populacao.json", ex.colunar(pop))
     ex.salvar(SAIDA, "extras.json", extras(pop))
     ex.salvar(SAIDA, "jogadores.json", jogadores(pop))
+    ex.salvar(SAIDA, "en.json", idiomas.EN)
 
 
 if __name__ == "__main__":

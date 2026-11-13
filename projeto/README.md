@@ -13,6 +13,17 @@ Projeto pessoal de analytics de tênis: todas as **66.819 partidas** do circuito
 | Explorar | Top N × demais, ranking × zebras (chance de o favorito vencer), linha do tempo 2000–2025 |
 | Jogadores | Líderes de todos os critérios (pódio e quadro de medalhas), ranking por critério com IC 95% de Wilson e perfil completo de cada jogador |
 
+## Idiomas (português e inglês)
+O site e o app têm o seletor **PT / EN** (na barra do site; na barra lateral do app). A escolha fica salva e vai na URL
+(`?lang=en`), então dá para compartilhar o link já em inglês. O trabalho da disciplina continua só em português.
+
+- **Texto da interface:** escrito lado a lado no código. No app, `T("português", "English")` de
+  [`nucleo/idiomas.py`](../nucleo/idiomas.py). No site, `T(...)` no JavaScript ou, no HTML fixo,
+  `<span data-l="pt">…</span><span data-l="en">…</span>`.
+- **Rótulos que vêm dos dados** (superfícies, níveis, rodadas, critérios, métricas): `tr(rótulo)`, com o dicionário
+  `EN` de `nucleo/idiomas.py`. É a fonte única: o exportador grava em `site/data/en.json`. Critério ou categoria nova
+  precisa entrar nesse dicionário.
+
 ## Como rodar (da raiz do repositório)
 ```bash
 pip install -r requirements.txt

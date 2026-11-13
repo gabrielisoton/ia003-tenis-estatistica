@@ -1,27 +1,34 @@
 /* Painel descritivo compartilhado pelo 1º set (população) e 2º set (amostra).
    Os dados chegam em colunas compactas (data/populacao.json e, na disciplina, amostra.json) e os
-   filtros são aplicados no navegador. As medidas seguem as mesmas definições do pandas. */
+   filtros são aplicados no navegador. As medidas seguem as mesmas definições do pandas.
+   Textos com T("pt", "en"): no site do projeto seguem o idioma escolhido; no da disciplina ficam em português. */
 
 const QUALI = {
-  sup: "Superfície", niv: "Nível do torneio", bo: "Formato (sets)", mao: "Mão do vencedor",
-  fav: "Favorito (melhor ranking) venceu?", dec: "Foi ao set decisivo?",
+  sup: T("Superfície", "Surface"), niv: T("Nível do torneio", "Tournament level"), bo: T("Formato (sets)", "Format (sets)"),
+  mao: T("Mão do vencedor", "Winner's playing hand"),
+  fav: T("Favorito (melhor ranking) venceu?", "Did the favourite (better ranked) win?"),
+  dec: T("Foi ao set decisivo?", "Did it go to a deciding set?"),
 };
 const QUANT = {
-  min: { nome: "Duração (minutos)", largura: 5 },
-  ace: { nome: "Aces na partida (2 jogadores)", largura: 1 },
-  df: { nome: "Duplas faltas na partida", largura: 1 },
-  idade: { nome: "Idade do vencedor (anos)", largura: 1 },
-  alt: { nome: "Altura do vencedor (cm)", largura: 1 },
-  sets: { nome: "Sets jogados", largura: 1 },
-  dif: { nome: "Diferença de ranking entre os jogadores", largura: null },
+  min: { nome: T("Duração (minutos)", "Duration (minutes)"), largura: 5 },
+  ace: { nome: T("Aces na partida (2 jogadores)", "Aces in the match (both players)"), largura: 1 },
+  df: { nome: T("Duplas faltas na partida", "Double faults in the match"), largura: 1 },
+  idade: { nome: T("Idade do vencedor (anos)", "Winner's age (years)"), largura: 1 },
+  alt: { nome: T("Altura do vencedor (cm)", "Winner's height (cm)"), largura: 1 },
+  sets: { nome: T("Sets jogados", "Sets played"), largura: 1 },
+  dif: { nome: T("Diferença de ranking entre os jogadores", "Ranking gap between the players"), largura: null },
 };
 const NOTAS = {
-  min: "Faixas de 5 minutos. A cauda à direita vem das partidas melhor de 5 e das maratonas: Isner × Mahut, em Wimbledon 2010, durou 665 minutos.",
-  ace: "Faixas de 1 ace, porque é uma contagem inteira. A curva sobe até cerca de 6–9 aces e depois desce devagar: poucas partidas de grandes sacadores, ou de 5 sets, puxam a média para cima da mediana.",
-  df: "Contagem inteira. A maioria das partidas tem poucas duplas faltas, e a cauda longa vem de jogos longos ou de dias ruins no saque.",
-  idade: "A idade é contínua (anos com decimais), agrupada em faixas de 1 ano.",
-  alt: "Os picos em 180, 183, 185, 188, 191 e 193 cm são reais. As alturas são registradas em pés e polegadas e depois convertidas: 6'0\" = 183 cm, 6'1\" = 185 cm, 6'2\" = 188 cm. Por isso aparece um pico a cada 2,5 cm, que é uma polegada.",
-  sets: "Melhor de 3 termina em 2 ou 3 sets; melhor de 5, em 3, 4 ou 5.",
+  min: T("Faixas de 5 minutos. A cauda à direita vem das partidas melhor de 5 e das maratonas: Isner × Mahut, em Wimbledon 2010, durou 665 minutos.",
+    "5-minute bins. The right tail comes from best-of-5 matches and marathons: Isner vs Mahut, at Wimbledon 2010, lasted 665 minutes."),
+  ace: T("Faixas de 1 ace, porque é uma contagem inteira. A curva sobe até cerca de 6–9 aces e depois desce devagar: poucas partidas de grandes sacadores, ou de 5 sets, puxam a média para cima da mediana.",
+    "1-ace bins, since it is a whole-number count. The curve rises to about 6–9 aces and then falls slowly: a few matches with big servers, or five-setters, pull the mean above the median."),
+  df: T("Contagem inteira. A maioria das partidas tem poucas duplas faltas, e a cauda longa vem de jogos longos ou de dias ruins no saque.",
+    "Whole-number count. Most matches have few double faults; the long tail comes from long matches or bad serving days."),
+  idade: T("A idade é contínua (anos com decimais), agrupada em faixas de 1 ano.", "Age is continuous (years with decimals), grouped in 1-year bins."),
+  alt: T("Os picos em 180, 183, 185, 188, 191 e 193 cm são reais. As alturas são registradas em pés e polegadas e depois convertidas: 6'0\" = 183 cm, 6'1\" = 185 cm, 6'2\" = 188 cm. Por isso aparece um pico a cada 2,5 cm, que é uma polegada.",
+    "The peaks at 180, 183, 185, 188, 191 and 193 cm are real. Heights are recorded in feet and inches and then converted: 6'0\" = 183 cm, 6'1\" = 185 cm, 6'2\" = 188 cm. That is why there is a peak every 2.5 cm, which is one inch."),
+  sets: T("Melhor de 3 termina em 2 ou 3 sets; melhor de 5, em 3, 4 ou 5.", "Best of 3 ends in 2 or 3 sets; best of 5 in 3, 4 or 5."),
 };
 const FAIXAS_RK = [[1, 5], [6, 10], [11, 25], [26, 50], [51, 100], [101, 200], [201, 1e9]];
 
@@ -52,12 +59,12 @@ function resumo(v) {
 /* ---------------- categorias ---------------- */
 function cats(col, meta) {
   switch (col) {
-    case "sup": return meta.codigos.sup.map((r, i) => [i, r]);
-    case "niv": return meta.codigos.niv.map((r, i) => [i, r]);
-    case "rod": return meta.codigos.rod.map((r, i) => [i, r]).filter(([, r]) => r !== "3rd/4th");
-    case "mao": return [[0, "Destro"], [1, "Canhoto"]];
-    case "bo": return [[3, "Melhor de 3"], [5, "Melhor de 5"]];
-    case "fav": case "dec": return [[1, "Sim"], [0, "Não"]];
+    case "sup": return meta.codigos.sup.map((r, i) => [i, tr(r)]);
+    case "niv": return meta.codigos.niv.map((r, i) => [i, tr(r)]);
+    case "rod": return meta.codigos.rod.map((r, i) => [i, r]).filter(([, r]) => r !== "3rd/4th").map(([i, r]) => [i, tr(r)]);
+    case "mao": return [[0, tr("Destro")], [1, tr("Canhoto")]];
+    case "bo": return [[3, tr("Melhor de 3")], [5, tr("Melhor de 5")]];
+    case "fav": case "dec": return [[1, tr("Sim")], [0, tr("Não")]];
   }
 }
 function frequencias(d, idx, col, meta) {
@@ -95,14 +102,14 @@ function montarFiltros(el, meta, f, aoMudar) {
     (cor ? `<span class="pt" style="background:${cor[r]}"></span>` : "") + `${r}</button>`).join("");
   el.className = "filtros";
   el.innerHTML = `
-    <div class="grupo"><span class="rot">Superfície</span>${chips("sup", cats("sup", meta), CORES.sup)}</div>
-    <div class="grupo"><span class="rot">Nível</span>${chips("niv", cats("niv", meta))}</div>
-    <div class="grupo"><span class="rot">Anos</span>
+    <div class="grupo"><span class="rot">${T("Superfície", "Surface")}</span>${chips("sup", cats("sup", meta), CORES.sup)}</div>
+    <div class="grupo"><span class="rot">${T("Nível", "Level")}</span>${chips("niv", cats("niv", meta))}</div>
+    <div class="grupo"><span class="rot">${T("Anos", "Years")}</span>
       <select class="sel" data-a="a0">${anos.map(a => `<option ${a === f.a0 ? "selected" : ""}>${a}</option>`).join("")}</select>–
       <select class="sel" data-a="a1">${anos.map(a => `<option ${a === f.a1 ? "selected" : ""}>${a}</option>`).join("")}</select></div>
-    <div class="grupo"><span class="rot">Partidas com</span>
-      <select class="sel" data-a="top">${[[0, "todos os jogadores"], [5, "algum Top 5"], [10, "algum Top 10"], [20, "algum Top 20"],
-        [50, "algum Top 50"], [100, "algum Top 100"]].map(([v, r]) => `<option value="${v}" ${v === f.top ? "selected" : ""}>${r}</option>`).join("")}</select></div>`;
+    <div class="grupo"><span class="rot">${T("Partidas com", "Matches with")}</span>
+      <select class="sel" data-a="top">${[[0, T("todos os jogadores", "any players")], ...[5, 10, 20, 50, 100]
+        .map(n => [n, T(`algum Top ${n}`, `a Top ${n} player`)])].map(([v, r]) => `<option value="${v}" ${v === f.top ? "selected" : ""}>${r}</option>`).join("")}</select></div>`;
   el.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => {
     const g = b.dataset.g, v = +b.dataset.v;
     if (f[g].has(v)) { if (f[g].size > 1) f[g].delete(v); } else f[g].add(v);
@@ -123,10 +130,10 @@ function grafBarras(el, titulo, series, col) {
     marker: { color: (unica && col === "sup") ? s.freq.map(c => CORES.sup[c.rot]) : s.cor },
     text: s.freq.map(c => pct(c.p)), textposition: "outside", cliponaxis: false,
     customdata: s.freq.map(c => c.n),
-    hovertemplate: `<b>%{x}</b><br>%{y:.1%} das partidas (n = %{customdata:,})<extra>${s.nome}</extra>`,
+    hovertemplate: `<b>%{x}</b><br>%{y:.1%} ${T("das partidas", "of matches")} (n = %{customdata:,})<extra>${s.nome}</extra>`,
   }));
   plot(el, traces, { title: { text: titulo, x: 0, font: { size: 16, family: "Barlow Condensed" } }, height: 340,
-    showlegend: !unica, yaxis: { tickformat: ".0%", title: "% das partidas", gridcolor: "rgba(137,135,129,.22)" },
+    showlegend: !unica, yaxis: { tickformat: ".0%", title: T("% das partidas", "% of matches"), gridcolor: "rgba(137,135,129,.22)" },
     margin: { l: 56, r: 10, t: 64, b: 46 } });
 }
 function grafHist(el, col, series, base) {
@@ -137,27 +144,29 @@ function grafHist(el, col, series, base) {
   const traces = series.map(s => ({
     type: "histogram", name: s.nome, x: s.v.filter(x => x <= hi), histnorm: "percent",
     xbins: { start: inicio, end: hi + w, size: w }, marker: { color: s.cor }, opacity: unica ? .9 : .6,
-    hovertemplate: `%{x}: %{y:.1f}% das partidas<extra>${s.nome}</extra>`,
+    hovertemplate: `%{x}: %{y:.1f}% ${T("das partidas", "of matches")}<extra>${s.nome}</extra>`,
   }));
   const shapes = [], ann = [];
   series.forEach(s => {
     shapes.push({ type: "line", xref: "x", yref: "paper", x0: s.r.media, x1: s.r.media, y0: 0, y1: 1, line: { color: s.cor, width: 2 } });
     shapes.push({ type: "line", xref: "x", yref: "paper", x0: s.r.mediana, x1: s.r.mediana, y0: 0, y1: 1, line: { color: s.cor, width: 2, dash: "dot" } });
     if (unica) {
-      ann.push({ x: s.r.media, y: 1, yref: "paper", xanchor: "left", yanchor: "bottom", text: ` média ${br(s.r.media, 1)}`, showarrow: false });
-      ann.push({ x: s.r.mediana, y: 1, yref: "paper", xanchor: "right", yanchor: "bottom", text: `mediana ${br(s.r.mediana, 1)} `, showarrow: false });
+      ann.push({ x: s.r.media, y: 1, yref: "paper", xanchor: "left", yanchor: "bottom", text: ` ${T("média", "mean")} ${br(s.r.media, 1)}`, showarrow: false });
+      ann.push({ x: s.r.mediana, y: 1, yref: "paper", xanchor: "right", yanchor: "bottom", text: `${T("mediana", "median")} ${br(s.r.mediana, 1)} `, showarrow: false });
     }
   });
   plot(el, traces, { barmode: "overlay", bargap: .08, height: 380, shapes, annotations: ann, showlegend: !unica,
-    title: { text: `Distribuição — ${q.nome}<br><sup>linha contínua = média · pontilhada = mediana · os 0,5% maiores valores ficam fora do gráfico (aparecem no boxplot)</sup>`, x: 0, font: { size: 16, family: "Barlow Condensed" } },
-    xaxis: { title: q.nome, showgrid: false }, yaxis: { title: "% das partidas", gridcolor: "rgba(137,135,129,.22)" },
+    title: { text: T(`Distribuição — ${q.nome}<br><sup>linha contínua = média · pontilhada = mediana · os 0,5% maiores valores ficam fora do gráfico (aparecem no boxplot)</sup>`,
+      `Distribution — ${q.nome}<br><sup>solid line = mean · dotted = median · the top 0.5% of values are off the chart (they show in the boxplot)</sup>`), x: 0, font: { size: 16, family: "Barlow Condensed" } },
+    xaxis: { title: q.nome, showgrid: false }, yaxis: { title: T("% das partidas", "% of matches"), gridcolor: "rgba(137,135,129,.22)" },
     margin: { l: 56, r: 10, t: 78, b: 50 } });
 }
 function grafBox(el, col, series) {
   const traces = series.map(s => ({ type: "box", x: s.v, name: s.nome, marker: { color: s.cor, size: 3 },
     boxmean: true, orientation: "h", hoverinfo: "x" }));
   plot(el, traces, { height: series.length > 1 ? 260 : 200, showlegend: false,
-    title: { text: "Boxplot · caixa = 50% centrais · traço = mediana · tracejado = média", x: 0, font: { size: 14 } },
+    title: { text: T("Boxplot · caixa = 50% centrais · traço = mediana · tracejado = média",
+      "Boxplot · box = middle 50% · line = median · dashed = mean"), x: 0, font: { size: 14 } },
     xaxis: { title: QUANT[col].nome }, margin: { l: 90, r: 10, t: 40, b: 46 } });
 }
 
@@ -166,10 +175,11 @@ function placarFiltrado(el, d, idx) {
   const m = resumo(valoresDe(d, idx, "min")), a = resumo(valoresDe(d, idx, "ace"));
   let fav = 0, nf = 0; for (const i of idx) if (d.fav[i] !== null) { nf++; fav += d.fav[i]; }
   placar(el, [
-    { rot: "Partidas", num: br(idx.length, 0) },
-    { rot: "Duração mediana", num: m.n ? `${br(m.mediana, 0)} min` : "—", sub: m.n ? `média ${br(m.media, 1)} min` : "" },
-    { rot: "Aces por partida", num: a.n ? br(a.media, 1) : "—", sub: "média dos 2 jogadores" },
-    { rot: "Favorito venceu", num: nf ? pct(fav / nf) : "—", sub: "jogador de melhor ranking" },
+    { rot: T("Partidas", "Matches"), num: br(idx.length, 0) },
+    { rot: T("Duração mediana", "Median duration"), num: m.n ? `${br(m.mediana, 0)} min` : "—",
+      sub: m.n ? `${T("média", "mean")} ${br(m.media, 1)} min` : "" },
+    { rot: T("Aces por partida", "Aces per match"), num: a.n ? br(a.media, 1) : "—", sub: T("média dos 2 jogadores", "both players combined, mean") },
+    { rot: T("Favorito venceu", "Favourite won"), num: nf ? pct(fav / nf) : "—", sub: T("jogador de melhor ranking", "better-ranked player") },
   ]);
 }
 
@@ -179,23 +189,26 @@ function tabelaMedidas(d, idx) {
     return `<tr><td>${q.nome}</td>${[r.n, r.media, r.mediana, r.dp, r.min, r.q1, r.q3, r.max, r.assim]
       .map((v, k) => `<td class="n">${k === 0 ? br(v, 0) : br(v, 2)}</td>`).join("")}</tr>`;
   }).join("");
-  return `<table class="t"><tr><th>Variável</th><th>n</th><th>Média</th><th>Mediana</th><th>Desvio-padrão</th>
-    <th>Mín.</th><th>Q1</th><th>Q3</th><th>Máx.</th><th>Assimetria</th></tr>${linhas}</table>`;
+  return `<table class="t"><tr><th>${T("Variável", "Variable")}</th><th>n</th><th>${T("Média", "Mean")}</th><th>${T("Mediana", "Median")}</th>
+    <th>${T("Desvio-padrão", "Std. deviation")}</th><th>${T("Mín.", "Min")}</th><th>Q1</th><th>Q3</th><th>${T("Máx.", "Max")}</th>
+    <th>${T("Assimetria", "Skewness")}</th></tr>${linhas}</table>`;
 }
 
 /* Desenha o painel. `alvo` = série principal; `ref` = população para sobrepor (2º set). */
 function painelDescritivo(raiz, meta, alvo, ref, estado) {
-  const series = q => ref ? [{ nome: "População", cor: CORES.pop, ...q(ref) }, { nome: alvo.nome, cor: alvo.cor, ...q(alvo) }]
+  const series = q => ref ? [{ nome: T("População", "Population"), cor: CORES.pop, ...q(ref) }, { nome: alvo.nome, cor: alvo.cor, ...q(alvo) }]
                           : [{ nome: alvo.nome, cor: alvo.cor, ...q(alvo) }];
   // qualitativas
   const q = raiz.querySelector("#quali");
   q.innerHTML = Object.keys(QUALI).map(c => `<div class="cartao"><div id="b-${c}" class="grafico"></div></div>`).join("") +
     `<div class="cartao" style="grid-column:1/-1"><div id="b-rod" class="grafico"></div>
-      <p class="nota"><b>Por que a R32 tem mais partidas?</b> Quase metade da base é de torneios ATP 250, que têm chave de
+      <p class="nota">${T(`<b>Por que a R32 tem mais partidas?</b> Quase metade da base é de torneios ATP 250, que têm chave de
       28 ou 32 jogadores e <b>começam na R32</b>. Só os Grand Slams começam na R128, e os Masters na R64 ou na R128. Em cada
-      torneio, a 1ª rodada é a que tem mais jogos.</p></div>`;
+      torneio, a 1ª rodada é a que tem mais jogos.`, `<b>Why does the R32 have the most matches?</b> Almost half of the data comes
+      from ATP 250 events, which have 28- or 32-player draws and <b>start in the R32</b>. Only Grand Slams start in the R128,
+      and Masters in the R64 or R128. In every tournament, the first round is the one with the most matches.`)}</p></div>`;
   for (const c of Object.keys(QUALI)) grafBarras(q.querySelector(`#b-${c}`), QUALI[c], series(s => ({ freq: frequencias(s.d, s.idx, c, meta) })), c);
-  grafBarras(q.querySelector("#b-rod"), "Rodada — % das partidas jogadas em cada rodada",
+  grafBarras(q.querySelector("#b-rod"), T("Rodada — % das partidas jogadas em cada rodada", "Round — % of matches played in each round"),
     series(s => ({ freq: frequencias(s.d, s.idx, "rod", meta) })), "rod");
 
   // quantitativas
@@ -206,23 +219,26 @@ function painelDescritivo(raiz, meta, alvo, ref, estado) {
     const r = resumo(alvoV);
     const hist = raiz.querySelector("#hist"), box = raiz.querySelector("#box"), nota = raiz.querySelector("#nota-quant");
     if (c === "dif") {
-      grafBarras(hist, "Diferença de ranking entre os jogadores (em faixas)",
+      grafBarras(hist, T("Diferença de ranking entre os jogadores (em faixas)", "Ranking gap between the players (in bands)"),
         series(s => ({ freq: faixasRanking(s.d, s.idx) })), "dif");
       Plotly.purge(box); box.style.minHeight = "0"; box.innerHTML = "";
-      nota.innerHTML = `Metade das partidas tem diferença de até <b>${br(r.mediana, 0)} posições</b> (mediana); 25% têm até
+      nota.innerHTML = T(`Metade das partidas tem diferença de até <b>${br(r.mediana, 0)} posições</b> (mediana); 25% têm até
         ${br(r.q1, 0)} e 75% até ${br(r.q3, 0)}. A média (${br(r.media, 0)}) é inflada por poucos jogos muito desiguais, de até
-        ${br(r.max, 0)} posições, por isso usamos faixas.`;
+        ${br(r.max, 0)} posições, por isso usamos faixas.`, `Half of the matches have a gap of up to <b>${br(r.mediana, 0)} places</b>
+        (median); 25% up to ${br(r.q1, 0)} and 75% up to ${br(r.q3, 0)}. The mean (${br(r.media, 0)}) is inflated by a few very
+        lopsided matches, with gaps of up to ${br(r.max, 0)} places, which is why we use bands.`);
     } else {
       box.style.minHeight = "";
       grafHist(hist, c, ser, ref ? resumo(valoresDe(ref.d, ref.idx, c)) : r);
       grafBox(box, c, ser);
       nota.textContent = NOTAS[c] || "";
     }
-    raiz.querySelector("#mets-quant").innerHTML = [["Média", br(r.media)], ["Mediana", br(r.mediana)],
-      ["Desvio-padrão", br(r.dp)], ["Assimetria", br(r.assim)], ["n válido", br(r.n, 0)]]
+    raiz.querySelector("#mets-quant").innerHTML = [[T("Média", "Mean"), br(r.media)], [T("Mediana", "Median"), br(r.mediana)],
+      [T("Desvio-padrão", "Std. deviation"), br(r.dp)], [T("Assimetria", "Skewness"), br(r.assim)], [T("n válido", "valid n"), br(r.n, 0)]]
       .map(([a, b]) => `<div class="met"><div class="rot">${a}</div><div class="num">${b}</div></div>`).join("") +
-      (r.assim > 1 ? `<div class="aviso" style="grid-column:1/-1">Distribuição assimétrica à direita: a média é puxada pelas
-        partidas extremas e fica acima da mediana. A mediana descreve melhor a partida típica.</div>` : "");
+      (r.assim > 1 ? `<div class="aviso" style="grid-column:1/-1">${T(`Distribuição assimétrica à direita: a média é puxada pelas
+        partidas extremas e fica acima da mediana. A mediana descreve melhor a partida típica.`, `Right-skewed distribution: the
+        mean is pulled up by extreme matches and sits above the median. The median better describes the typical match.`)}</div>` : "");
   };
   sel.onchange = desenharQuant;
   desenharQuant();
@@ -231,14 +247,16 @@ function painelDescritivo(raiz, meta, alvo, ref, estado) {
 
 function htmlPainel() {
   return `
-  <div class="abas" id="abas-desc"><button class="on" data-a="quali">Variáveis qualitativas</button>
-    <button data-a="quant">Variáveis quantitativas</button><button data-a="tab">Medidas</button></div>
+  <div class="abas" id="abas-desc"><button class="on" data-a="quali">${T("Variáveis qualitativas", "Categorical variables")}</button>
+    <button data-a="quant">${T("Variáveis quantitativas", "Numeric variables")}</button><button data-a="tab">${T("Medidas", "Summary statistics")}</button></div>
   <section class="painel-aba" data-p="quali">
-    ${comoLer("Cada barra mostra <b>que fração das partidas</b> cai em cada categoria; as barras de um gráfico somam 100%. Passe o mouse para ver o número de partidas.")}
+    ${comoLer(T("Cada barra mostra <b>que fração das partidas</b> cai em cada categoria; as barras de um gráfico somam 100%. Passe o mouse para ver o número de partidas.",
+      "Each bar shows <b>what share of matches</b> falls in each category; the bars in a chart add up to 100%. Hover to see the number of matches."))}
     <div class="grade g2" id="quali"></div></section>
   <section class="painel-aba" data-p="quant" hidden>
-    ${comoLer("O <b>histograma</b> mostra como os valores se distribuem: cada barra é uma faixa de valores e a altura indica a fração das partidas nela. A <b>média</b> é o centro de gravidade; a <b>mediana</b> divide as partidas em duas metades. Com cauda longa à direita, a média fica acima da mediana. O <b>boxplot</b> resume a mesma distribuição: a caixa contém os 50% centrais.")}
-    <div class="cartao"><label>Variável:
+    ${comoLer(T("O <b>histograma</b> mostra como os valores se distribuem: cada barra é uma faixa de valores e a altura indica a fração das partidas nela. A <b>média</b> é o centro de gravidade; a <b>mediana</b> divide as partidas em duas metades. Com cauda longa à direita, a média fica acima da mediana. O <b>boxplot</b> resume a mesma distribuição: a caixa contém os 50% centrais.",
+      "The <b>histogram</b> shows how the values are spread: each bar is a range of values and its height is the share of matches in it. The <b>mean</b> is the centre of gravity; the <b>median</b> splits the matches into two halves. With a long right tail, the mean sits above the median. The <b>boxplot</b> summarises the same distribution: the box holds the middle 50%."))}
+    <div class="cartao"><label>${T("Variável", "Variable")}:
       <select class="sel" id="sel-quant">${Object.entries(QUANT).map(([c, q]) => `<option value="${c}">${q.nome}</option>`).join("")}</select></label>
       <div id="hist" class="grafico"></div><p class="nota" id="nota-quant"></p><div id="box"></div>
       <div class="mets" id="mets-quant"></div></div></section>

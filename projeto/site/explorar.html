@@ -3,64 +3,84 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Explorar · Tênis em números</title>
+<title data-en="Explore · Tennis by numbers">Explorar · Tênis em números</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/estilo.css?v=2">
+<link rel="stylesheet" href="assets/estilo.css?v=4">
 <script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>
-<script src="assets/site.js?v=3"></script>
-<script src="assets/comum.js?v=3"></script>
-<script src="assets/descritiva.js?v=2"></script>
+<script src="assets/site.js?v=4"></script>
+<script src="assets/comum.js?v=5"></script>
+<script src="assets/descritiva.js?v=3"></script>
 </head>
 <body>
 <header class="topo"><div id="quadra"></div><div class="topo-dentro">
-  <span class="etiqueta">Tie-break · Explorar</span>
-  <h1>O que separa os melhores do resto?</h1>
-  <p>Análises descritivas com a <b>população inteira</b> (66.819 partidas do circuito principal, 2000–2025). Ajudam a
+  <span class="etiqueta">Tie-break · <span data-l="pt">Explorar</span><span data-l="en">Explore</span></span>
+  <h1><span data-l="pt">O que separa os melhores do resto?</span><span data-l="en">What sets the best apart from the rest?</span></h1>
+  <p data-l="pt">Análises descritivas com a <b>população inteira</b> (66.819 partidas do circuito principal, 2000–2025). Ajudam a
     entender o jogo e conversam com IA.</p>
+  <p data-l="en">Descriptive analyses of the <b>whole population</b> (66,819 main-tour matches, 2000–2025). They help explain
+    the game and connect with AI.</p>
 </div></header>
 <main class="conteudo" id="area">
-  <div class="abas" id="abas-x" style="margin-top:22px"><button class="on" data-a="top">🏆 Top N × demais</button>
-    <button data-a="rank">🎯 Ranking e zebras</button><button data-a="tempo">📈 Linha do tempo</button></div>
+  <div class="abas" id="abas-x" style="margin-top:22px"><button class="on" data-a="top">🏆 <span data-l="pt">Top N × demais</span><span data-l="en">Top N vs the rest</span></button>
+    <button data-a="rank">🎯 <span data-l="pt">Ranking e zebras</span><span data-l="en">Ranking and upsets</span></button>
+    <button data-a="tempo">📈 <span data-l="pt">Linha do tempo</span><span data-l="en">Timeline</span></button></div>
 
   <section class="painel-aba" data-p="top">
     <div class="filtros" style="position:static">
-      <div class="grupo"><span class="rot">Comparar o</span><span id="sel-n"></span></div>
-      <div class="grupo"><span class="rot">Superfície</span><span id="sel-sup"></span></div></div>
+      <div class="grupo"><span class="rot"><span data-l="pt">Comparar o</span><span data-l="en">Compare the</span></span><span id="sel-n"></span></div>
+      <div class="grupo"><span class="rot"><span data-l="pt">Superfície</span><span data-l="en">Surface</span></span><span id="sel-sup"></span></div></div>
     <div id="top-comoler"></div>
     <div id="top-placar"></div>
     <div class="cartao" style="margin-top:14px"><div id="top-g" class="grafico" style="min-height:420px"></div>
       <div class="aula" id="top-leitura" style="margin:6px 0 0"></div></div>
     <div class="grade g2" style="margin-top:16px">
-      <div class="cartao rolagem"><h3>Métricas lado a lado</h3><table class="t" id="top-t"></table></div>
+      <div class="cartao rolagem"><h3><span data-l="pt">Métricas lado a lado</span><span data-l="en">Metrics side by side</span></h3><table class="t" id="top-t"></table></div>
       <div class="cartao rolagem"><h3 id="top-jog-tit"></h3><table class="t" id="top-jog"></table></div></div>
-    <p class="nota"><b>Sobre o corte:</b> Top 5 e Top 10 mostram a elite (Big 3 e poucos outros), com grupos menores. Top 50 e
+    <p class="nota" data-l="pt"><b>Sobre o corte:</b> Top 5 e Top 10 mostram a elite (Big 3 e poucos outros), com grupos menores. Top 50 e
       Top 100 comparam o "jogador de circuito principal" com quem vem dos qualificatórios e Challengers. O corte que mais
       conta uma história é o <b>Top 10</b>: elite × resto.</p>
+    <p class="nota" data-l="en"><b>About the cut-off:</b> Top 5 and Top 10 show the elite (the Big 3 and a few others), with
+      smaller groups. Top 50 and Top 100 compare the "main-tour player" with those coming up from qualifying and Challengers.
+      The cut-off that tells the clearest story is the <b>Top 10</b>: elite vs the rest.</p>
   </section>
 
   <section class="painel-aba" data-p="rank" hidden>
-    <h2 style="margin-top:6px">Quanto maior a diferença de ranking, maior a chance de o favorito vencer?</h2>
+    <h2 style="margin-top:6px"><span data-l="pt">Quanto maior a diferença de ranking, maior a chance de o favorito vencer?</span>
+      <span data-l="en">Does a bigger ranking gap mean a better chance for the favourite?</span></h2>
     <div class="cartao"><div id="rank-g" class="grafico" style="min-height:460px"></div>
-      <p class="nota"><span class="leg"><i style="background:var(--pop)"></i>população (linha contínua = todas · pontilhada = melhor de 5 · tracejada = melhor de 3)</span></p></div>
+      <p class="nota"><span class="leg"><i style="background:var(--pop)"></i><span data-l="pt">população (linha contínua = todas · pontilhada = melhor de 5 · tracejada = melhor de 3)</span>
+        <span data-l="en">population (solid line = all · dotted = best of 5 · dashed = best of 3)</span></span></p></div>
     <div id="rank-comoler"></div>
-    <div class="aula"><strong>Conexão com IA</strong>Um modelo de previsão de tênis precisa ser <b>calibrado</b>: quando ele diz
+    <div class="aula" data-l="pt"><strong>Conexão com IA</strong>Um modelo de previsão de tênis precisa ser <b>calibrado</b>: quando ele diz
       "70% de chance", o favorito deve vencer cerca de 70% das vezes. Esta curva é o ponto de partida de um modelo simples,
       de uma variável só. Repare também que, para a mesma diferença, o favorito vence mais no <b>melhor de 5</b>: jogos
       longos reduzem a chance de zebra.</div>
+    <div class="aula" data-l="en"><strong>Link to AI</strong>A tennis prediction model has to be <b>calibrated</b>: when it says
+      "70% chance", the favourite should win about 70% of the time. This curve is the starting point for a simple,
+      single-variable model. Notice too that, for the same gap, the favourite wins more often in <b>best of 5</b>: longer
+      matches reduce the chance of an upset.</div>
   </section>
 
   <section class="painel-aba" data-p="tempo" hidden>
-    <div class="filtros" style="position:static"><div class="grupo"><span class="rot">Indicador</span>
+    <div class="filtros" style="position:static"><div class="grupo"><span class="rot"><span data-l="pt">Indicador</span><span data-l="en">Indicator</span></span>
       <select class="sel" id="sel-tempo"></select></div></div>
     <div class="cartao"><div id="tempo-g" class="grafico" style="min-height:420px"></div><p class="nota" id="tempo-txt"></p></div>
-    <div class="cartao" style="margin-top:14px"><h3 style="margin-top:0">Destaques</h3><ul>
+    <div class="cartao" style="margin-top:14px"><h3 style="margin-top:0"><span data-l="pt">Destaques</span><span data-l="en">Highlights</span></h3>
+      <ul data-l="pt">
       <li>As partidas <b>ficaram mais longas</b>: o melhor de 3 passou de cerca de 91 para 109 minutos. Uma hipótese é o
         jogo mais físico, com trocas longas do fundo de quadra. A base não permite testar a causa.</li>
       <li>A <b>idade dos vencedores subiu</b> até cerca de 2015 (era do Big 3 e dos veteranos) e depois começou a cair com a
         nova geração.</li>
       <li>A % de vitórias do favorito <b>subiu na era de domínio do Big 3</b> (cerca de 68% entre 2009 e 2016) e <b>voltou a
-        cerca de 64%</b> depois. O circuito ficou mais imprevisível.</li></ul></div>
+        cerca de 64%</b> depois. O circuito ficou mais imprevisível.</li></ul>
+      <ul data-l="en">
+      <li>Matches <b>got longer</b>: best of 3 went from about 91 to 109 minutes. One hypothesis is a more physical game,
+        with long baseline rallies. The data cannot test the cause.</li>
+      <li>The <b>winners' age went up</b> until about 2015 (the era of the Big 3 and the veterans) and then started to fall
+        with the new generation.</li>
+      <li>The favourite's win rate <b>rose during the Big 3's dominance</b> (about 68% between 2009 and 2016) and <b>went back
+        to about 64%</b> afterwards. The tour became less predictable.</li></ul></div>
   </section>
 </main>
 <script>
@@ -70,88 +90,103 @@ ligarAbas(document.getElementById("area"), "#abas-x");
   const ex = await carregar("extras");
   const M = ex.top_n.metricas, PN = ex.top_n.por_n;
   const fmtM = (m, v) => v === null ? "—" : m.unidade === "%" ? pct(v) : br(v, m.unidade === "n" ? 2 : 1);
+  const PP = T("p.p.", "pp");
   let N = "10", SUP = "Todas";
 
-  document.getElementById("top-comoler").innerHTML = comoLer(`Cada partida tem dois jogadores. Aqui olhamos <b>cada jogador
+  document.getElementById("top-comoler").innerHTML = comoLer(T(`Cada partida tem dois jogadores. Aqui olhamos <b>cada jogador
     em cada partida</b> (por isso há mais linhas do que partidas) e o classificamos como <b>Top N</b> se ele estava entre os N
     primeiros do ranking no início daquele torneio. Um mesmo jogador pode estar no Top N num ano e fora em outro. As
     porcentagens são <b>somas de pontos</b>: "pontos ganhos no saque" = todos os pontos que o grupo venceu sacando ÷ todos os
-    pontos que sacou.`);
+    pontos que sacou.`, `Every match has two players. Here we look at <b>each player in each match</b> (so there are more rows
+    than matches) and count them as <b>Top N</b> if they were among the top N in the ranking at the start of that tournament.
+    The same player can be in the Top N one year and outside it another. Percentages are <b>sums of points</b>: "service
+    points won" = all the points the group won on serve ÷ all the points it served.`));
   const chips = (el, ops, atual, fn) => {
     el.innerHTML = ops.map(([v, r]) => `<button class="chip ${v === atual ? "on" : ""}" data-v="${v}">${r}</button>`).join("");
     el.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => {
       el.querySelectorAll(".chip").forEach(x => x.classList.toggle("on", x === b)); fn(b.dataset.v); }));
   };
   chips(document.getElementById("sel-n"), Object.keys(PN).map(n => [n, `Top ${n}`]), N, v => { N = v; desenharTop(); });
-  chips(document.getElementById("sel-sup"), ["Todas", "Dura", "Saibro", "Grama"].map(s => [s, s]), SUP, v => { SUP = v; desenharTop(); });
+  chips(document.getElementById("sel-sup"), ["Todas", "Dura", "Saibro", "Grama"].map(s => [s, tr(s)]), SUP, v => { SUP = v; desenharTop(); });
 
   function desenharTop() {
     const r = PN[N][SUP], t = r.top, d = r.demais;
     placar(document.getElementById("top-placar"), [
-      { rot: `Top ${N} vence quem está fora`, num: pct(r.duelo.vitorias_top), sub: `${br(r.duelo.n, 0)} partidas Top × não-Top` },
-      { rot: `Vitórias do Top ${N}`, num: pct(t.vitorias), sub: "no geral" },
-      { rot: "Vitórias dos demais", num: pct(d.vitorias) },
-      { rot: `Jogador-partidas do Top ${N}`, num: br(t.n, 0), sub: `${t.n_jogadores} jogadores diferentes` },
+      { rot: T(`Top ${N} vence quem está fora`, `Top ${N} beats players outside it`), num: pct(r.duelo.vitorias_top),
+        sub: T(`${br(r.duelo.n, 0)} partidas Top × não-Top`, `${br(r.duelo.n, 0)} Top vs non-Top matches`) },
+      { rot: T(`Vitórias do Top ${N}`, `Top ${N} win rate`), num: pct(t.vitorias), sub: T("no geral", "overall") },
+      { rot: T("Vitórias dos demais", "Win rate of the rest"), num: pct(d.vitorias) },
+      { rot: T(`Jogador-partidas do Top ${N}`, `Top ${N} player-matches`), num: br(t.n, 0),
+        sub: T(`${t.n_jogadores} jogadores diferentes`, `${t.n_jogadores} different players`) },
     ]);
     const pcts = M.filter(m => m.unidade === "%" && !["vitorias", "canhoto"].includes(m.chave))
-      .map(m => [m.nome, 100 * (t[m.chave] - d[m.chave])]).sort((a, b) => a[1] - b[1]);
+      .map(m => [tr(m.nome), 100 * (t[m.chave] - d[m.chave])]).sort((a, b) => a[1] - b[1]);
+    const nomeSup = SUP === "Todas" ? T("todas as superfícies", "all surfaces") : tr(SUP).toLowerCase();
     plot(document.getElementById("top-g"), [{ type: "bar", orientation: "h", x: pcts.map(p => p[1]), y: pcts.map(p => p[0]),
       marker: { color: pcts.map(p => p[1] >= 0 ? CORES.top : CORES.demais) },
-      text: pcts.map(p => `${p[1] >= 0 ? "+" : ""}${br(p[1], 1)} p.p.`), textposition: "outside", cliponaxis: false,
-      hovertemplate: "%{y}: %{x:+.1f} p.p.<extra></extra>" }],
-      { height: 420, title: { text: `Onde o Top ${N} se diferencia (${SUP === "Todas" ? "todas as superfícies" : SUP.toLowerCase()})`, x: 0, font: { size: 16, family: "Barlow Condensed" } },
-        xaxis: { title: `Top ${N} − demais (pontos percentuais)`, zeroline: true, zerolinecolor: "rgba(137,135,129,.6)" },
+      text: pcts.map(p => `${p[1] >= 0 ? "+" : ""}${br(p[1], 1)} ${PP}`), textposition: "outside", cliponaxis: false,
+      hovertemplate: `%{y}: %{x:+.1f} ${PP}<extra></extra>` }],
+      { height: 420, title: { text: T(`Onde o Top ${N} se diferencia (${nomeSup})`, `Where the Top ${N} stands out (${nomeSup})`), x: 0, font: { size: 16, family: "Barlow Condensed" } },
+        xaxis: { title: T(`Top ${N} − demais (pontos percentuais)`, `Top ${N} − rest (percentage points)`), zeroline: true, zerolinecolor: "rgba(137,135,129,.6)" },
         margin: { l: 210, r: 60, t: 50, b: 50 } });
     const maior = pcts[pcts.length - 1];
-    document.getElementById("top-leitura").innerHTML = `<strong>Leitura</strong>A maior vantagem do Top ${N} está em
+    document.getElementById("top-leitura").innerHTML = T(`<strong>Leitura</strong>A maior vantagem do Top ${N} está em
       <b>${maior[0].toLowerCase()}</b> (+${br(maior[1], 1)} p.p.). Diferenças de 3 a 5 pontos percentuais por ponto parecem
-      pequenas, mas num jogo com mais de 150 pontos viram vários games e, no fim, a vitória. O tênis é decidido nas margens.`;
-    document.getElementById("top-t").innerHTML = `<tr><th>Métrica</th><th>Top ${N}</th><th>Demais</th><th>Diferença</th></tr>` +
+      pequenas, mas num jogo com mais de 150 pontos viram vários games e, no fim, a vitória. O tênis é decidido nas margens.`,
+      `<strong>Reading</strong>The Top ${N}'s biggest edge is in <b>${maior[0].toLowerCase()}</b> (+${br(maior[1], 1)} pp).
+      Differences of 3 to 5 percentage points per point look small, but over a match of more than 150 points they add up to
+      several games and, in the end, the win. Tennis is decided at the margins.`);
+    document.getElementById("top-t").innerHTML = `<tr><th>${T("Métrica", "Metric")}</th><th>Top ${N}</th><th>${T("Demais", "Rest")}</th><th>${T("Diferença", "Difference")}</th></tr>` +
       M.map(m => { const dif = (t[m.chave] - d[m.chave]) * (m.unidade === "%" ? 100 : 1);
-        return `<tr><td>${m.nome}${m.descricao ? `<br><span class="nota">${m.descricao}</span>` : ""}</td>
+        return `<tr><td>${tr(m.nome)}${m.descricao ? `<br><span class="nota">${tr(m.descricao)}</span>` : ""}</td>
           <td class="n">${fmtM(m, t[m.chave])}</td><td class="n">${fmtM(m, d[m.chave])}</td>
-          <td class="n ${dif >= 0 ? "pos" : "neg"}">${dif >= 0 ? "+" : ""}${br(dif, m.unidade === "n" ? 2 : 1)}${m.unidade === "%" ? " p.p." : ""}</td></tr>`; }).join("");
-    document.getElementById("top-jog-tit").textContent = `Quem mais jogou como Top ${N}`;
-    document.getElementById("top-jog").innerHTML = `<tr><th>Jogador</th><th>Partidas</th><th>% vitórias</th></tr>` +
+          <td class="n ${dif >= 0 ? "pos" : "neg"}">${dif >= 0 ? "+" : ""}${br(dif, m.unidade === "n" ? 2 : 1)}${m.unidade === "%" ? " " + PP : ""}</td></tr>`; }).join("");
+    document.getElementById("top-jog-tit").textContent = T(`Quem mais jogou como Top ${N}`, `Most matches as a Top ${N} player`);
+    document.getElementById("top-jog").innerHTML = `<tr><th>${T("Jogador", "Player")}</th><th>${T("Partidas", "Matches")}</th><th>${T("% vitórias", "Win %")}</th></tr>` +
       r.jogadores.map(j => `<tr><td>${j.jogador}</td><td class="n">${br(j.partidas, 0)}</td><td class="n">${pct(j.vitorias)}</td></tr>`).join("");
   }
   desenharTop();
 
   // ranking e zebras
-  const fx = ex.faixas_ranking;
+  const fx = ex.faixas_ranking, POP = T("População", "Population");
   plot(document.getElementById("rank-g"), [
-    { x: fx.map(f => f.faixa), y: fx.map(f => f.pop_taxa), mode: "lines+markers", name: "População (todas)",
+    { x: fx.map(f => f.faixa), y: fx.map(f => f.pop_taxa), mode: "lines+markers", name: T("População (todas)", "Population (all)"),
       line: { color: CORES.pop, width: 3 }, marker: { size: 9 }, customdata: fx.map(f => f.pop_n),
-      hovertemplate: "%{x}: %{y:.1%} (n = %{customdata:,})<extra>População</extra>" },
-    { x: fx.map(f => f.faixa), y: fx.map(f => f.bo5), mode: "lines", name: "melhor de 5", line: { color: CORES.pop, width: 2, dash: "dot" },
-      hovertemplate: "%{x}: %{y:.1%}<extra>Melhor de 5</extra>" },
-    { x: fx.map(f => f.faixa), y: fx.map(f => f.bo3), mode: "lines", name: "melhor de 3", line: { color: CORES.pop, width: 2, dash: "dash" },
-      hovertemplate: "%{x}: %{y:.1%}<extra>Melhor de 3</extra>" },
-  ], { height: 460, title: { text: "Vitória do favorito por faixa de diferença de ranking", x: 0, font: { size: 16, family: "Barlow Condensed" } },
+      hovertemplate: `%{x}: %{y:.1%} (n = %{customdata:,})<extra>${POP}</extra>` },
+    { x: fx.map(f => f.faixa), y: fx.map(f => f.bo5), mode: "lines", name: T("melhor de 5", "best of 5"), line: { color: CORES.pop, width: 2, dash: "dot" },
+      hovertemplate: `%{x}: %{y:.1%}<extra>${tr("Melhor de 5")}</extra>` },
+    { x: fx.map(f => f.faixa), y: fx.map(f => f.bo3), mode: "lines", name: T("melhor de 3", "best of 3"), line: { color: CORES.pop, width: 2, dash: "dash" },
+      hovertemplate: `%{x}: %{y:.1%}<extra>${tr("Melhor de 3")}</extra>` },
+  ], { height: 460, title: { text: T("Vitória do favorito por faixa de diferença de ranking", "Favourite's win rate by ranking-gap band"), x: 0, font: { size: 16, family: "Barlow Condensed" } },
     shapes: [{ type: "line", xref: "paper", x0: 0, x1: 1, y0: .5, y1: .5, line: { color: CORES.neutra, dash: "dash", width: 2 } }],
-    annotations: [{ xref: "paper", x: 0, y: .5, yanchor: "bottom", xanchor: "left", text: "50% = moeda", showarrow: false, font: { color: "#4b5650" } }],
-    yaxis: { tickformat: ".0%", title: "% de vitórias do favorito", range: [.3, 1], gridcolor: "rgba(137,135,129,.22)" },
-    xaxis: { title: "Diferença de posições no ranking" }, margin: { l: 70, r: 20, t: 80, b: 60 } });
-  document.getElementById("rank-comoler").innerHTML = comoLer(`Cada ponto é a % de partidas vencidas pelo jogador mais bem
+    annotations: [{ xref: "paper", x: 0, y: .5, yanchor: "bottom", xanchor: "left", text: T("50% = moeda", "50% = coin flip"), showarrow: false, font: { color: "#4b5650" } }],
+    yaxis: { tickformat: ".0%", title: T("% de vitórias do favorito", "favourite's win %"), range: [.3, 1], gridcolor: "rgba(137,135,129,.22)" },
+    xaxis: { title: T("Diferença de posições no ranking", "Gap in ranking places") }, margin: { l: 70, r: 20, t: 80, b: 60 } });
+  document.getElementById("rank-comoler").innerHTML = comoLer(T(`Cada ponto é a % de partidas vencidas pelo jogador mais bem
     ranqueado, para jogos com aquela diferença de posições. Quando os dois estão próximos no ranking (1–5 posições), o favorito
     vence pouco mais que uma moeda. Com mais de 200 posições de diferença, vence quase 4 em cada 5. As linhas tracejada e
-    pontilhada separam os jogos melhor de 3 e melhor de 5.`);
+    pontilhada separam os jogos melhor de 3 e melhor de 5.`, `Each point is the % of matches won by the better-ranked player,
+    for matches with that gap in ranking places. When the two are close in the ranking (1–5 places), the favourite wins only
+    slightly more often than a coin flip. With a gap of more than 200 places, they win almost 4 out of 5. The dashed and dotted
+    lines split best-of-3 and best-of-5 matches.`));
 
   // linha do tempo
   const lt = ex.linha_tempo, rot = ex.linha_tempo_rotulos, sel = document.getElementById("sel-tempo");
-  sel.innerHTML = Object.entries(rot).map(([k, [nome]]) => `<option value="${k}">${nome}</option>`).join("");
+  sel.innerHTML = Object.entries(rot).map(([k, [nome]]) => `<option value="${k}">${tr(nome)}</option>`).join("");
   const desenharTempo = () => {
-    const k = sel.value, [nome, un] = rot[k], ehPct = un === "%";
-    const tr = [{ x: lt.map(r => r.ano), y: lt.map(r => r[k]), mode: "lines+markers", name: "média", line: { color: CORES.pop, width: 3 },
-      marker: { size: 7 }, customdata: lt.map(r => r.n), hovertemplate: `%{x}: %{y:${ehPct ? ".1%" : ".1f"}} (%{customdata:,} partidas)<extra></extra>` }];
-    if (k === "minutos_bo3_media") tr.push({ x: lt.map(r => r.ano), y: lt.map(r => r.minutos_bo3_mediana), mode: "lines", name: "mediana",
-      line: { color: CORES.pop, dash: "dot" }, hovertemplate: "mediana %{y:.0f}<extra></extra>" });
-    plot(document.getElementById("tempo-g"), tr, { height: 420, showlegend: tr.length > 1,
-      title: { text: `${nome} por temporada`, x: 0, font: { size: 16, family: "Barlow Condensed" } },
+    const k = sel.value, [nomePt, un] = rot[k], nome = tr(nomePt), ehPct = un === "%";
+    const tr0 = [{ x: lt.map(r => r.ano), y: lt.map(r => r[k]), mode: "lines+markers", name: T("média", "mean"), line: { color: CORES.pop, width: 3 },
+      marker: { size: 7 }, customdata: lt.map(r => r.n), hovertemplate: `%{x}: %{y:${ehPct ? ".1%" : ".1f"}} (%{customdata:,} ${T("partidas", "matches")})<extra></extra>` }];
+    if (k === "minutos_bo3_media") tr0.push({ x: lt.map(r => r.ano), y: lt.map(r => r.minutos_bo3_mediana), mode: "lines", name: T("mediana", "median"),
+      line: { color: CORES.pop, dash: "dot" }, hovertemplate: `${T("mediana", "median")} %{y:.0f}<extra></extra>` });
+    plot(document.getElementById("tempo-g"), tr0, { height: 420, showlegend: tr0.length > 1,
+      title: { text: T(`${nome} por temporada`, `${nome} by season`), x: 0, font: { size: 16, family: "Barlow Condensed" } },
       yaxis: { tickformat: ehPct ? ".0%" : null, gridcolor: "rgba(137,135,129,.22)" }, margin: { l: 60, r: 20, t: 70, b: 40 } });
     const a = lt[0], b = lt[lt.length - 1], f = v => ehPct ? pct(v) : br(v, 1);
-    document.getElementById("tempo-txt").textContent = `De ${a.ano} a ${b.ano}: ${nome.toLowerCase()} foi de ${f(a[k])} para ${f(b[k])}.
-      Em 2020 houve bem menos partidas por causa da pandemia, então aquele ano oscila mais.`;
+    document.getElementById("tempo-txt").textContent = T(`De ${a.ano} a ${b.ano}: ${nome.toLowerCase()} foi de ${f(a[k])} para ${f(b[k])}.
+      Em 2020 houve bem menos partidas por causa da pandemia, então aquele ano oscila mais.`,
+      `From ${a.ano} to ${b.ano}: ${nome.charAt(0).toLowerCase() + nome.slice(1)} went from ${f(a[k])} to ${f(b[k])}.
+      2020 had far fewer matches because of the pandemic, so that year is noisier.`);
   };
   sel.addEventListener("change", desenharTempo);
   desenharTempo();

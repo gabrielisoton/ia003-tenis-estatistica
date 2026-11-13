@@ -9,6 +9,8 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
+from nucleo.idiomas import ingles
+
 BASE = Path(__file__).resolve().parent / "base"
 FONTE_URL = "https://github.com/Tennismylife/TML-Database"
 FONTE_NOME = "TML-Database (Tennismylife)"
@@ -26,10 +28,12 @@ def resumo() -> dict:
 
 
 def br(x, casas: int = 2) -> str:
-    """Formata número no padrão brasileiro: 1.234,56."""
+    """Formata número no padrão brasileiro: 1.234,56 (em inglês, no app do projeto: 1,234.56)."""
     if x is None or (isinstance(x, float) and pd.isna(x)):
         return "—"
     s = f"{x:,.{casas}f}"
+    if ingles():
+        return s
     return s.replace(",", "_").replace(".", ",").replace("_", ".")
 
 

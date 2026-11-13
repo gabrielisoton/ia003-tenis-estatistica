@@ -7,27 +7,70 @@
 const CORES = {
   pop: "#6250d6", amostra: "#c98500", top: "#d55181", demais: "#898781",
   neutra: "#898781", erro: "#d03b3b", ok: "#0ca30c",
-  sup: { "Dura": "#2a78d6", "Saibro": "#eb6834", "Grama": "#1baf7a", "Carpete": "#898781" },
+  sup: { "Dura": "#2a78d6", "Saibro": "#eb6834", "Grama": "#1baf7a", "Carpete": "#898781",
+         "Hard": "#2a78d6", "Clay": "#eb6834", "Grass": "#1baf7a", "Carpet": "#898781" },
 };
 
 // navegação: cada site define window.SITE em assets/site.js
-//   { marca, paginas: [[href, sobretítulo, nome]], extras: { rotulo, dica, itens: [[href, sobretítulo, nome]] }, rodape }
+//   { marca, paginas: [[href, sobretítulo, nome]], extras: { rotulo, dica, itens: [[href, sobretítulo, nome]] }, rodape,
+//     idiomas }  — com idiomas: true, cada texto pode ser [pt, en] e aparece o seletor PT/EN na barra
 const SITE = window.SITE || { marca: "Estatística no Tênis", paginas: [], extras: null, rodape: "" };
+
+/* ---------------- idioma ----------------
+   Só o site que declara SITE.idiomas troca de idioma (o trabalho da IA003 fica sempre em português, mesmo que o
+   visitante tenha escolhido inglês no projeto, que está no mesmo domínio).
+   - texto fixo no HTML: <span data-l="pt">…</span><span data-l="en">…</span> (o CSS esconde o outro idioma);
+     atributos: data-en-title, data-en-placeholder, data-en-aria-label; <title data-en="…">
+   - texto montado no JS: T("português", "English")
+   - rótulos que vêm dos dados (superfícies, critérios…): tr(rótulo), com o dicionário data/en.json
+     (gerado de nucleo/idiomas.py, o mesmo que o app Streamlit usa) */
+const IDIOMA = (() => {
+  if (!SITE.idiomas) return "pt";
+  const q = new URLSearchParams(location.search).get("lang");
+  try {
+    if (q === "en" || q === "pt") localStorage.setItem("lingua", q);
+    return (q || localStorage.getItem("lingua")) === "en" ? "en" : "pt";
+  } catch (e) { return q === "en" ? "en" : "pt"; }
+})();
+const EM_INGLES = IDIOMA === "en";
+document.documentElement.dataset.lang = IDIOMA;
+if (EM_INGLES) document.documentElement.lang = "en";
+const T = (pt, en) => EM_INGLES ? en : pt;
+const L = x => Array.isArray(x) ? T(x[0], x[1]) : x;          // texto do site.js: "pt" ou ["pt", "en"]
+let _EN = {};
+const tr = s => EM_INGLES && typeof s === "string" ? (_EN[s] ?? s) : s;
+const ordinal = n => !EM_INGLES ? `${n}º`
+  : n + ((n % 100 >= 11 && n % 100 <= 13) ? "th" : ({ 1: "st", 2: "nd", 3: "rd" }[n % 10] || "th"));
+function trocarIdioma(l) {
+  try { localStorage.setItem("lingua", l); } catch (e) { /* sem armazenamento: vale só a URL */ }
+  const u = new URL(location.href);
+  u.searchParams.set("lang", l);
+  location.replace(u);
+}
+function aplicarIdiomaFixo() {
+  if (!EM_INGLES) return;
+  const t = document.querySelector("title[data-en]"); if (t) document.title = t.dataset.en;
+  for (const a of ["title", "placeholder", "aria-label"])
+    document.querySelectorAll(`[data-en-${a}]`).forEach(el => el.setAttribute(a, el.getAttribute(`data-en-${a}`)));
+}
 
 /* ---------------- dados ---------------- */
 const _cache = {};
+const _json = nome => fetch(`data/${nome}.json`).then(r => {
+  if (!r.ok) throw new Error(`Falha ao carregar ${nome}.json`);
+  return r.json();
+});
+// em inglês, o dicionário dos rótulos chega antes de qualquer dado (tr() já funciona quando a página desenha)
+const _dicionario = EM_INGLES ? _json("en").then(d => { _EN = d; }).catch(() => {}) : Promise.resolve();
 async function carregar(nome) {
-  if (!_cache[nome]) _cache[nome] = fetch(`data/${nome}.json`).then(r => {
-    if (!r.ok) throw new Error(`Falha ao carregar ${nome}.json`);
-    return r.json();
-  });
+  if (!_cache[nome]) _cache[nome] = _dicionario.then(() => _json(nome));
   return _cache[nome];
 }
 
-/* ---------------- formatação pt-BR ---------------- */
+/* ---------------- formatação (pt-BR, ou en-US no site em inglês) ---------------- */
 function br(x, casas = 2) {
   if (x === null || x === undefined || Number.isNaN(x)) return "—";
-  return Number(x).toLocaleString("pt-BR", { minimumFractionDigits: casas, maximumFractionDigits: casas });
+  return Number(x).toLocaleString(EM_INGLES ? "en-US" : "pt-BR", { minimumFractionDigits: casas, maximumFractionDigits: casas });
 }
 const pct = (x, casas = 1) => (x === null || x === undefined) ? "—" : br(100 * x, casas) + "%";
 const tx = s => String(s).replace(/,/g, "{,}");  // vírgula decimal no KaTeX
@@ -39,13 +82,18 @@ function montarNav() {
   const nav = document.createElement("nav");
   nav.className = "nav";
   nav.innerHTML = `<div class="nav-dentro">
-    <a class="marca" href="index.html"><span class="bola"></span> ${SITE.marca}</a>
+    <a class="marca" href="index.html"><span class="bola"></span> ${L(SITE.marca)}</a>
     ${SITE.paginas.map(([href, set, nome]) =>
-      `<a class="item ${href === atual ? "ativo" : ""}" href="${href}"><small>${set}</small>${nome}</a>`).join("")}
-    ${SITE.extras ? `<span class="nav-sep" title="${SITE.extras.dica || ""}">${SITE.extras.rotulo}</span>` +
+      `<a class="item ${href === atual ? "ativo" : ""}" href="${href}"><small>${L(set)}</small>${L(nome)}</a>`).join("")}
+    ${SITE.extras ? `<span class="nav-sep" title="${L(SITE.extras.dica) || ""}">${L(SITE.extras.rotulo)}</span>` +
       SITE.extras.itens.map(([href, set, nome]) =>
-        `<a class="item extra ${href === atual ? "ativo" : ""}" href="${href}"><small>${set}</small>${nome}</a>`).join("") : ""}
+        `<a class="item extra ${href === atual ? "ativo" : ""}" href="${href}"><small>${L(set)}</small>${L(nome)}</a>`).join("") : ""}
+    ${SITE.idiomas ? `<span class="idioma" role="group" aria-label="Idioma · Language">${[["pt", "Português"], ["en", "English"]]
+      .map(([l, n]) => `<button type="button" data-idioma="${l}" class="${l === IDIOMA ? "on" : ""}" title="${n}" lang="${l}"
+        aria-pressed="${l === IDIOMA}">${l.toUpperCase()}</button>`).join("")}</span>` : ""}
   </div>`;
+  nav.querySelectorAll("[data-idioma]").forEach(b => b.addEventListener("click", () => {
+    if (b.dataset.idioma !== IDIOMA) trocarIdioma(b.dataset.idioma); }));
   document.body.prepend(nav);
 }
 
@@ -71,7 +119,7 @@ function placar(el, itens) {
 }
 
 function comoLer(texto) {
-  return `<details class="como-ler"><summary>📖 Como ler</summary><div>${texto}</div></details>`;
+  return `<details class="como-ler"><summary>📖 ${T("Como ler", "How to read")}</summary><div>${texto}</div></details>`;
 }
 
 function katexEm(el, tex, display = true) {
@@ -80,12 +128,12 @@ function katexEm(el, tex, display = true) {
 }
 
 /* ---------------- Plotly: tema ---------------- */
-const PLOTLY_CONFIG = { displayModeBar: false, responsive: true, locale: "pt-BR" };
+const PLOTLY_CONFIG = { displayModeBar: false, responsive: true, locale: EM_INGLES ? "en" : "pt-BR" };
 function layoutBase(extra = {}) {
   return Object.assign({
     font: { family: "Barlow, system-ui, sans-serif", size: 14, color: "#14211b" },
     paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
-    separators: ",.", margin: { l: 56, r: 18, t: 46, b: 52 },
+    separators: EM_INGLES ? ".," : ",.", margin: { l: 56, r: 18, t: 46, b: 52 },
     hoverlabel: { font: { family: "Barlow", size: 13 } },
     legend: { orientation: "h", y: 1.02, yanchor: "bottom", x: 0 },
     xaxis: { showgrid: false, zeroline: false, linecolor: "#c3c2b7", automargin: true },
@@ -129,9 +177,9 @@ function seloHawkeye(contem) {
 
 function rodape() {
   const f = document.createElement("footer");
-  f.innerHTML = `${SITE.rodape ? SITE.rodape + "<br>" : ""}
-    Dados: <a href="https://github.com/Tennismylife/TML-Database">TML-Database (Tennismylife)</a>, ATP 2000–2025, uso educacional.`;
+  f.innerHTML = `${SITE.rodape ? L(SITE.rodape) + "<br>" : ""}
+    ${T("Dados", "Data")}: <a href="https://github.com/Tennismylife/TML-Database">TML-Database (Tennismylife)</a>, ATP 2000–2025, ${T("uso educacional", "educational use")}.`;
   document.body.append(f);
 }
 
-document.addEventListener("DOMContentLoaded", () => { montarNav(); rodape(); });
+document.addEventListener("DOMContentLoaded", () => { aplicarIdiomaFixo(); montarNav(); rodape(); });

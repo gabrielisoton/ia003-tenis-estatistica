@@ -19,7 +19,7 @@ import streamlit as st
 
 NUCLEO = Path(__file__).resolve().parent
 # ordem de recarga: dependências antes de quem as importa
-MODULOS_NUCLEO = ["nucleo.enderecos", "nucleo.dados", "nucleo.estatistica", "nucleo.graficos",
+MODULOS_NUCLEO = ["nucleo.idiomas", "nucleo.enderecos", "nucleo.dados", "nucleo.estatistica", "nucleo.graficos",
                   "nucleo.analises", "nucleo.secoes"]
 
 

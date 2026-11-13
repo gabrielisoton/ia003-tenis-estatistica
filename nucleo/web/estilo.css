@@ -167,3 +167,12 @@ select.sel, input.sel { font: inherit; font-size: .9rem; padding: 5px 8px; borde
 td.pos { color: #0a6b0a; } td.neg { color: #a32424; }
 .nav-dentro { scrollbar-width: none; }
 .nav-dentro::-webkit-scrollbar { display: none; }
+
+/* idiomas (só no site que declara SITE.idiomas): texto fixo com data-l="pt"/"en"; o seletor fica na barra */
+html[data-lang="en"] [data-l="pt"], html:not([data-lang="en"]) [data-l="en"] { display: none !important; }
+.nav .idioma { margin-left: auto; padding: 8px 0 8px 14px; display: flex; gap: 4px; flex-shrink: 0;
+  position: sticky; right: 0; background: var(--quadra); box-shadow: -14px 0 14px -6px var(--quadra); }  /* sempre visível, mesmo com a barra rolando */
+.nav .idioma button { font: 600 .78rem/1 Barlow, system-ui, sans-serif; color: rgba(255,255,255,.7); background: transparent;
+  border: 1px solid rgba(255,255,255,.3); border-radius: 999px; padding: 6px 10px; cursor: pointer; white-space: nowrap; }
+.nav .idioma button:hover { color: #fff; border-color: rgba(255,255,255,.6); }
+.nav .idioma button.on { color: var(--placar); background: var(--bola); border-color: var(--bola); cursor: default; }

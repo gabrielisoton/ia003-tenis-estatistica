@@ -3,62 +3,78 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Tênis em números</title>
-<meta name="description" content="O circuito ATP de 2000 a 2025 em números: quem é o melhor em cada aspecto do jogo, ranking, zebras e a evolução do tênis.">
+<title data-en="Tennis by numbers">Tênis em números</title>
+<meta name="description" content="O circuito ATP de 2000 a 2025 em números: quem é o melhor em cada aspecto do jogo, ranking, zebras e a evolução do tênis. · The ATP tour from 2000 to 2025 in numbers: who is the best at each part of the game.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/estilo.css?v=2">
-<script src="assets/site.js?v=3"></script>
-<script src="assets/comum.js?v=3"></script>
-<script src="assets/base.js?v=3"></script>
+<link rel="stylesheet" href="assets/estilo.css?v=4">
+<script src="assets/site.js?v=4"></script>
+<script src="assets/comum.js?v=5"></script>
+<script src="assets/base.js?v=4"></script>
 </head>
 <body>
 <header class="hero">
   <div id="quadra"></div>
   <div class="hero-dentro">
-    <span class="etiqueta">Analytics de tênis · ATP 2000–2025</span>
-    <h1>Tênis em números<br><em>quem é o melhor</em> em cada aspecto do jogo?</h1>
-    <p>Todas as <b>66.819 partidas</b> do circuito principal da ATP entre 2000 e 2025, com saque, devolução, break points,
+    <span class="etiqueta"><span data-l="pt">Analytics de tênis</span><span data-l="en">Tennis analytics</span> · ATP 2000–2025</span>
+    <h1 data-l="pt">Tênis em números<br><em>quem é o melhor</em> em cada aspecto do jogo?</h1>
+    <h1 data-l="en">Tennis by numbers<br><em>who is the best</em> at each part of the game?</h1>
+    <p data-l="pt">Todas as <b>66.819 partidas</b> do circuito principal da ATP entre 2000 e 2025, com saque, devolução, break points,
       tie-breaks e títulos de cada jogador. Explore o circuito, compare a elite com o resto e veja o perfil completo de
       cada jogador.</p>
+    <p data-l="en">All <b>66,819 matches</b> on the main ATP tour between 2000 and 2025, with every player's serve, return,
+      break points, tie-breaks and titles. Explore the tour, compare the elite with the rest and see each player's full
+      profile.</p>
   </div>
 </header>
 
 <main class="conteudo">
   <div id="placar" style="margin-top:-28px"></div>
 
-  <h2>O que dá para ver aqui</h2>
+  <h2><span data-l="pt">O que dá para ver aqui</span><span data-l="en">What you can explore</span></h2>
   <div class="grade g3">
     <a class="cartao set" href="circuito.html"><span class="faixa" style="background:var(--pop)"></span>
-      <div class="n">Visão geral</div><h3>O circuito</h3>
-      <div style="color:var(--tinta-2)">Como é uma partida típica: superfícies, duração, aces, ranking. Com filtros.</div></a>
+      <div class="n"><span data-l="pt">Visão geral</span><span data-l="en">Overview</span></div>
+      <h3><span data-l="pt">O circuito</span><span data-l="en">The tour</span></h3>
+      <div style="color:var(--tinta-2)"><span data-l="pt">Como é uma partida típica: superfícies, duração, aces, ranking. Com filtros.</span>
+        <span data-l="en">What a typical match looks like: surfaces, duration, aces, ranking. With filters.</span></div></a>
     <a class="cartao set" href="explorar.html"><span class="faixa" style="background:var(--top)"></span>
-      <div class="n">Tie-break</div><h3>Explorar</h3>
-      <div style="color:var(--tinta-2)">Top 10 × resto: onde a elite se diferencia. Ranking e zebras. Como o jogo mudou em 25 anos.</div></a>
+      <div class="n">Tie-break</div><h3><span data-l="pt">Explorar</span><span data-l="en">Explore</span></h3>
+      <div style="color:var(--tinta-2)"><span data-l="pt">Top 10 × resto: onde a elite se diferencia. Ranking e zebras. Como o jogo mudou em 25 anos.</span>
+        <span data-l="en">Top 10 vs the rest: where the elite stands out. Ranking and upsets. How the game changed in 25 years.</span></div></a>
     <a class="cartao set" href="jogadores.html"><span class="faixa" style="background:var(--top)"></span>
-      <div class="n">Vestiário</div><h3>Jogadores</h3>
-      <div style="color:var(--tinta-2)">Os líderes de cada critério e o quadro de medalhas, o ranking por critério e o perfil
-        completo de cada jogador.</div></a>
+      <div class="n"><span data-l="pt">Vestiário</span><span data-l="en">Locker room</span></div>
+      <h3><span data-l="pt">Jogadores</span><span data-l="en">Players</span></h3>
+      <div style="color:var(--tinta-2)"><span data-l="pt">Os líderes de cada critério e o quadro de medalhas, o ranking por critério e o perfil
+        completo de cada jogador.</span><span data-l="en">The leaders in every category and the medal table, the ranking
+        by category and each player's full profile.</span></div></a>
   </div>
 
   <div class="rede"></div>
-  <h2>A base de dados e a população</h2>
+  <h2><span data-l="pt">A base de dados e a população</span><span data-l="en">The data and the population</span></h2>
   <div id="base-populacao"></div>
 
-  <h3>O que tem em cada partida</h3>
+  <h3><span data-l="pt">O que tem em cada partida</span><span data-l="en">What each match contains</span></h3>
   <div class="cartao rolagem"><table class="t" id="conteudo-partida"></table></div>
-  <p class="nota">Das 50 colunas brutas da base, ficaram de fora só identificadores (id do torneio, da partida e dos jogadores),
+  <p class="nota" data-l="pt">Das 50 colunas brutas da base, ficaram de fora só identificadores (id do torneio, da partida e dos jogadores),
     cabeça de chave, forma de entrada (qualifier, wild card, lucky loser), pontos no ranking e tamanho da chave. Elas são
     boas candidatas para análises futuras.</p>
+  <p class="nota" data-l="en">Of the 50 raw columns in the database, the only ones left out are identifiers (tournament, match
+    and player ids), seeding, entry type (qualifier, wild card, lucky loser), ranking points and draw size. They are good
+    candidates for future analyses.</p>
   <div id="termos"></div>
 
   <div class="rede"></div>
-  <h2>De onde veio</h2>
+  <h2><span data-l="pt">De onde veio</span><span data-l="en">Where it came from</span></h2>
   <div class="cartao">
-    <p>O projeto nasceu do trabalho final da disciplina <b>IA003 · Probabilidade e Estatística para IA</b> (Especialização
+    <p data-l="pt">O projeto nasceu do trabalho final da disciplina <b>IA003 · Probabilidade e Estatística para IA</b> (Especialização
       em IA, UFRGS), que compara esta população com uma <b>amostra aleatória simples</b> de 382 partidas para estudar
       intervalos de confiança e testes de hipóteses. <a href="../index.html">Ver o trabalho</a> ·
       <a href="https://github.com/gabrielisoton/ia003-tenis-estatistica">código no GitHub</a>.</p>
+    <p data-l="en">The project grew out of the final assignment for <b>IA003 · Probability and Statistics for AI</b> (AI
+      specialization, UFRGS, Brazil), which compares this population with a <b>simple random sample</b> of 382 matches to
+      study confidence intervals and hypothesis tests. <a href="../index.html">See the assignment (in Portuguese)</a> ·
+      <a href="https://github.com/gabrielisoton/ia003-tenis-estatistica">code on GitHub</a>.</p>
   </div>
 </main>
 
@@ -68,21 +84,28 @@ document.getElementById("quadra").innerHTML = svgQuadra();
   const meta = await carregar("meta");
   const r = meta.resumo;
   placar(document.getElementById("placar"), [
-    { rot: "Partidas", num: br(r.N, 0), sub: "circuito principal, concluídas" },
-    { rot: "Temporadas", num: "26", sub: r.periodo },
-    { rot: "Jogadores", num: br(r.n_jogadores, 0), sub: `${br(r.n_torneios, 0)} edições de torneios` },
-    { rot: "Colunas", num: br(r.n_variaveis, 0), sub: "na base processada" },
+    { rot: T("Partidas", "Matches"), num: br(r.N, 0), sub: T("circuito principal, concluídas", "main tour, completed") },
+    { rot: T("Temporadas", "Seasons"), num: "26", sub: r.periodo },
+    { rot: T("Jogadores", "Players"), num: br(r.n_jogadores, 0), sub: T(`${br(r.n_torneios, 0)} edições de torneios`, `${br(r.n_torneios, 0)} tournament editions`) },
+    { rot: T("Colunas", "Columns"), num: br(r.n_variaveis, 0), sub: T("na base processada", "in the processed data") },
   ]);
   secaoBase(document.getElementById("base-populacao"), r,
-            { unidade: "Unidade de análise", tituloPop: "População: o que entra e o que fica de fora" });
-  const grupos = [
+            { unidade: T("Unidade de análise", "Unit of analysis"),
+              tituloPop: T("População: o que entra e o que fica de fora", "Population: what is in and what is left out") });
+  const grupos = EM_INGLES ? [
+    ["Tournament", "year, tournament, level, surface, indoor/outdoor, round, best of 3 or 5"],
+    ["Result", "winner, loser, score (sets and tie-breaks), duration in minutes"],
+    ["Players", "age, height, playing hand, country and ATP ranking at the start of the tournament"],
+    ["Serve (each player)", "aces, double faults, service points, 1st serves in, points won on 1st and 2nd serve, service games, break points faced and saved"],
+    ["Derived", "did the favourite win?, deciding set?, ranking gap, sets played; and, per player, return points won, break points converted, dominance ratio, tie-breaks and titles"],
+  ] : [
     ["Torneio", "ano, torneio, nível, superfície, quadra aberta/coberta, rodada, melhor de 3 ou 5"],
     ["Resultado", "vencedor, perdedor, placar (sets e tie-breaks), duração em minutos"],
     ["Jogadores", "idade, altura, mão dominante, país e ranking ATP no início do torneio"],
     ["Saque (de cada jogador)", "aces, duplas faltas, pontos de saque, 1º saque dentro, pontos ganhos com o 1º e com o 2º saque, games de saque, break points enfrentados e salvos"],
     ["Derivadas", "favorito venceu?, foi ao set decisivo?, diferença de ranking, sets jogados; e, por jogador, pontos ganhos na devolução, break points convertidos, dominance ratio, tie-breaks e títulos"],
   ];
-  document.getElementById("conteudo-partida").innerHTML = `<tr><th>Grupo</th><th>Colunas</th></tr>` +
+  document.getElementById("conteudo-partida").innerHTML = `<tr><th>${T("Grupo", "Group")}</th><th>${T("Colunas", "Columns")}</th></tr>` +
     grupos.map(([g, c]) => `<tr><td><b>${g}</b></td><td>${c}</td></tr>`).join("");
   document.getElementById("termos").innerHTML = termosDeUso();
 })();

@@ -8,11 +8,17 @@ from nucleo import analises as an
 from nucleo import dados
 from nucleo import graficos as g
 from nucleo.dados import br, pct
+from nucleo.idiomas import T, ordinal, tr
 
-st.title("Jogadores · Quem é o melhor em cada aspecto do jogo?")
-st.caption("Todas as partidas do circuito principal da ATP de 2000 a 2025 (66.819 partidas). Os números cobrem só "
-           "esse recorte, **sem Challengers, qualificatórios, Copa Davis nem Olimpíadas**, então diferem das "
-           "estatísticas oficiais de carreira.")
+st.title(T("Jogadores · Quem é o melhor em cada aspecto do jogo?", "Players · Who is the best at each aspect of the game?"))
+st.caption(T("Todas as partidas do circuito principal da ATP de 2000 a 2025 (66.819 partidas). Os números cobrem só "
+             "esse recorte, **sem Challengers, qualificatórios, Copa Davis nem Olimpíadas**, então diferem das "
+             "estatísticas oficiais de carreira.",
+             "Every match on the ATP main tour from 2000 to 2025 (66,819 matches). The numbers cover only "
+             "that slice, **with no Challengers, qualifying, Davis Cup or Olympics**, so they differ from the "
+             "official career statistics."))
+PP = T("p.p.", "pp")
+VD = T("V–D", "W–L")
 
 pop = dados.populacao()
 A0, A1 = int(pop["ano"].min()), int(pop["ano"].max())
@@ -60,15 +66,25 @@ def ajustar_minimo(chave_anos: str, chave_min: str) -> None:
 
 def aviso_vazio(anos, sups, nivs, minimo) -> None:
     if not sups or not nivs:
-        st.warning("Escolha pelo menos uma superfície e um nível de torneio.")
+        st.warning(T("Escolha pelo menos uma superfície e um nível de torneio.",
+                     "Pick at least one surface and one tournament level."))
         return
     mx = max_partidas(anos, tuple(sups), tuple(nivs))
-    st.warning(f"Ninguém tem {minimo} partidas nesse recorte: quem mais jogou fez {mx}. Reduza o mínimo de "
-               "partidas ou amplie o recorte." if mx else "Não há partidas nesse recorte.")
+    if mx:
+        st.warning(T(f"Ninguém tem {minimo} partidas nesse recorte: quem mais jogou fez {mx}. Reduza o mínimo de "
+                     "partidas ou amplie o recorte.",
+                     f"Nobody has {minimo} matches in this slice: the most anyone played is {mx}. Lower the minimum "
+                     "number of matches or widen the slice."))
+    else:
+        st.warning(T("Não há partidas nesse recorte.", "There are no matches in this slice."))
 
 
-AJUDA_MIN = ("Ajusta sozinho quando você muda os anos (10 por temporada, entre 20 e 100), mas pode ser editado. "
-             "Com poucas partidas o IC fica largo e o 1º lugar pode ser sorte.")
+AJUDA_MIN = T("Ajusta sozinho quando você muda os anos (10 por temporada, entre 20 e 100), mas pode ser editado. "
+              "Com poucas partidas o IC fica largo e o 1º lugar pode ser sorte.",
+              "Adjusts itself when you change the years (10 per season, between 20 and 100), but you can edit it. "
+              "With few matches the CI gets wide and 1st place may be luck.")
+AJUDA_ANOS = T("Escolha o mesmo ano nas duas pontas para ver uma temporada só.",
+               "Pick the same year at both ends to see a single season.")
 for _k in ("ld_min", "rk_min"):
     st.session_state.setdefault(_k, 100)
 
@@ -86,7 +102,7 @@ def fmt(c: an.Criterio, v) -> str:
 
 
 def fmt_ic(c: an.Criterio, li, ls) -> str:
-    return "—" if c.tipo != "%" or pd.isna(li) else f"{pct(li)} a {pct(ls)}"
+    return "—" if c.tipo != "%" or pd.isna(li) else f"{pct(li)} {T('a', 'to')} {pct(ls)}"
 
 
 def fmt_pctl(p) -> str:
@@ -99,7 +115,7 @@ def eixo(fig: go.Figure, c: an.Criterio, eixo_x: bool = True) -> None:
     upd(tickformat=".0%" if c.tipo == "%" else None, separatethousands=True)
 
 
-ROTULO_CRIT = {c.chave: f"{c.grupo} · {c.nome}" for c in an.CRITERIOS}
+ROTULO_CRIT = {c.chave: f"{tr(c.grupo)} · {tr(c.nome)}" for c in an.CRITERIOS}
 CORES_MED = {"ouro": "#c98500", "prata": "#a8a6a0", "bronze": "#8c5a3c"}
 ICONE_MED = {"ouro": "🥇", "prata": "🥈", "bronze": "🥉"}
 TOP_MED = 10
@@ -111,19 +127,24 @@ def lideres(anos, superficies, niveis, minimo):
     return an.lideres(tab, TOP_MED) if len(tab) else (pd.DataFrame(), pd.DataFrame())
 
 
-aba_lid, aba_rank, aba_perfil = st.tabs(["🏆 Líderes de cada critério", "🏅 Ranking por critério",
-                                         "🎾 Perfil do jogador"])
+aba_lid, aba_rank, aba_perfil = st.tabs([T("🏆 Líderes de cada critério", "🏆 Leaders in every criterion"),
+                                         T("🏅 Ranking por critério", "🏅 Ranking by criterion"),
+                                         T("🎾 Perfil do jogador", "🎾 Player profile")])
+L_ANOS, L_MIN = T("Anos", "Years"), T("Mínimo de partidas", "Minimum matches")
+L_SUP, L_NIV = T("Superfície", "Surface"), T("Nível do torneio", "Tournament level")
 
 # =================================================================== líderes
 with aba_lid:
     c1, c2 = st.columns([3, 1])
-    anos_l = c1.slider("Anos", A0, A1, (A0, A1), key="ld_anos", on_change=ajustar_minimo,
-                       args=("ld_anos", "ld_min"), help="Escolha o mesmo ano nas duas pontas para ver uma temporada só.")
-    min_l = c2.number_input("Mínimo de partidas", 1, 1000, step=10, key="ld_min",
-                            help="Só disputa a liderança quem jogou pelo menos isso no recorte. " + AJUDA_MIN)
+    anos_l = c1.slider(L_ANOS, A0, A1, (A0, A1), key="ld_anos", on_change=ajustar_minimo,
+                       args=("ld_anos", "ld_min"), help=AJUDA_ANOS)
+    min_l = c2.number_input(L_MIN, 1, 1000, step=10, key="ld_min",
+                            help=T("Só disputa a liderança quem jogou pelo menos isso no recorte. ",
+                                   "Only players with at least this many matches in the slice compete for the lead. ")
+                            + AJUDA_MIN)
     c3, c4 = st.columns(2)
-    sups_l = c3.multiselect("Superfície", an.SUPERFICIES, default=an.SUPERFICIES, key="ld_sup")
-    nivs_l = c4.multiselect("Nível do torneio", an.NIVEIS, default=an.NIVEIS, key="ld_niv")
+    sups_l = c3.multiselect(L_SUP, an.SUPERFICIES, default=an.SUPERFICIES, key="ld_sup", format_func=tr)
+    nivs_l = c4.multiselect(L_NIV, an.NIVEIS, default=an.NIVEIS, key="ld_niv", format_func=tr)
     pod, med = lideres(anos_l, tuple(sups_l), tuple(nivs_l), int(min_l))
     if not sups_l or not nivs_l or pod.empty:
         aviso_vazio(anos_l, sups_l, nivs_l, int(min_l))
@@ -132,16 +153,21 @@ with aba_lid:
         isoladas = pod.get("lideranca", pd.Series(dtype=object))
         m = st.columns([1.8, 1, 1, 1])
         d = med.iloc[0]
-        m[0].metric("Mais dominante", dono, help="Quem soma mais pontos no quadro de medalhas "
-                                                 "(1º lugar = 3, 2º = 2, 3º = 1).")
-        m[1].metric("Pontos", br(d["pontos"], 0),
-                    help=f"{int(d['ouro'])} 🥇 · {int(d['prata'])} 🥈 · {int(d['bronze'])} 🥉 em {len(pod)} critérios")
-        m[2].metric(f"Vezes no top {TOP_MED}", br(med.iloc[0][f"top{TOP_MED}"], 0), help=f"em {len(pod)} critérios")
-        m[3].metric("Lideranças isoladas", f"{int((isoladas == 'isolada').sum())} de {int(isoladas.notna().sum())}",
-                    help="Proporções em que o IC 95% do 1º não toca o do 2º: a vantagem não é só sorte.")
+        m[0].metric(T("Mais dominante", "Most dominant"), dono,
+                    help=T("Quem soma mais pontos no quadro de medalhas (1º lugar = 3, 2º = 2, 3º = 1).",
+                           "Who has the most points in the medal table (1st place = 3, 2nd = 2, 3rd = 1)."))
+        m[1].metric(T("Pontos", "Points"), br(d["pontos"], 0),
+                    help=f"{int(d['ouro'])} 🥇 · {int(d['prata'])} 🥈 · {int(d['bronze'])} 🥉 "
+                         + T(f"em {len(pod)} critérios", f"across {len(pod)} criteria"))
+        m[2].metric(T(f"Vezes no top {TOP_MED}", f"Times in the top {TOP_MED}"), br(med.iloc[0][f"top{TOP_MED}"], 0),
+                    help=T(f"em {len(pod)} critérios", f"across {len(pod)} criteria"))
+        m[3].metric(T("Lideranças isoladas", "Clear leads"),
+                    f"{int((isoladas == 'isolada').sum())} {T('de', 'of')} {int(isoladas.notna().sum())}",
+                    help=T("Proporções em que o IC 95% do 1º não toca o do 2º: a vantagem não é só sorte.",
+                           "Proportions where the 1st-place 95% CI does not touch the 2nd's: the edge is not just luck."))
 
         # ---------------- pódio de todos os critérios
-        st.subheader("Pódio de cada critério")
+        st.subheader(T("Pódio de cada critério", "Podium for every criterion"))
         def celula(r, medalha):
             if pd.isna(r.get(medalha)):
                 return "—"
@@ -152,18 +178,18 @@ with aba_lid:
             if pd.isna(v):
                 return "—"
             if c.tipo == "%":
-                return f"+{br(100 * v, 1)} p.p."
+                return f"+{br(100 * v, 1)} {PP}"
             return "+" + (br(v, 3) if c.tipo == "taxa" else br(v, 2) if c.tipo == "razao" else br(v, 0))
         tp = pd.DataFrame({
-            "Grupo": pod["grupo"], "Critério": pod["criterio"],
-            "🥇 1º": [celula(r, "ouro") for _, r in pod.iterrows()],
-            "🥈 2º": [celula(r, "prata") for _, r in pod.iterrows()],
-            "🥉 3º": [celula(r, "bronze") for _, r in pod.iterrows()],
-            "Vantagem do 1º": [vantagem(r) for _, r in pod.iterrows()],
-            "Liderança": pod["lideranca"].fillna("—") if "lideranca" in pod else "—",
+            T("Grupo", "Group"): pod["grupo"].map(tr), T("Critério", "Criterion"): pod["criterio"].map(tr),
+            f"🥇 {ordinal(1)}": [celula(r, "ouro") for _, r in pod.iterrows()],
+            f"🥈 {ordinal(2)}": [celula(r, "prata") for _, r in pod.iterrows()],
+            f"🥉 {ordinal(3)}": [celula(r, "bronze") for _, r in pod.iterrows()],
+            T("Vantagem do 1º", "Leader's margin"): [vantagem(r) for _, r in pod.iterrows()],
+            T("Liderança", "Lead"): pod["lideranca"].map(tr).fillna("—") if "lideranca" in pod else "—",
         })
         st.dataframe(tp, hide_index=True, width="stretch", height=38 + 35 * len(tp))
-        g.como_ler(
+        g.como_ler(T(
             "Cada linha é um critério, com os **três melhores** jogadores do recorte (entre os que têm o mínimo de "
             "partidas) e o valor de cada um. Em duplas faltas por game, o melhor é quem comete **menos**.\n\n"
             "**Vantagem do 1º** é a distância para o 2º colocado (em pontos percentuais nas proporções).\n\n"
@@ -171,55 +197,82 @@ with aba_lid:
             "2º. Se os intervalos **não se tocam**, a liderança é *isolada*: dificilmente é fruto do acaso das "
             "partidas que cada um jogou. Se eles se sobrepõem, é um *empate técnico*: com esses dados não dá para "
             "afirmar quem é melhor. É um critério conservador (intervalos que se tocam um pouco ainda podem indicar "
-            "diferença num teste formal), mas mostra a ideia de variabilidade amostral.")
+            "diferença num teste formal), mas mostra a ideia de variabilidade amostral.",
+            "Each row is a criterion, with the **top three** players in the slice (among those with the minimum "
+            "number of matches) and each one's value. For double faults per game, the best is whoever commits "
+            "**fewer**.\n\n"
+            "**Leader's margin** is the gap to the runner-up (in percentage points for proportions).\n\n"
+            "**Clear lead vs statistical tie:** for proportions, we compare the **95% Wilson CIs** of 1st and "
+            "2nd place. If the intervals **do not touch**, the lead is *clear*: it is unlikely to be down to the "
+            "luck of the matches each one played. If they overlap, it is a *statistical tie*: with this data we "
+            "cannot say who is better. It is a conservative rule (intervals that overlap slightly may still show "
+            "a difference in a formal test), but it illustrates sampling variability."))
 
         # ---------------- quadro de medalhas
-        st.subheader("Quadro de medalhas · quem domina mais critérios")
+        st.subheader(T("Quadro de medalhas · quem domina mais critérios", "Medal table · who dominates the most criteria"))
         topm = med.head(15).iloc[::-1]
         fig = go.Figure()
         for medalha in an.MEDALHAS:
-            fig.add_bar(y=topm.index, x=topm[medalha], orientation="h", name=f"{ICONE_MED[medalha]} {medalha}",
+            fig.add_bar(y=topm.index, x=topm[medalha], orientation="h", name=f"{ICONE_MED[medalha]} {tr(medalha)}",
                         marker_color=CORES_MED[medalha],
                         text=[int(v) if v else "" for v in topm[medalha]], textposition="inside",
-                        customdata=["<br>• ".join(x) for x in topm[f"{medalha}_criterios"]],
-                        hovertemplate="<b>%{y}</b> · %{x} " + medalha + "<br>• %{customdata}<extra></extra>")
+                        customdata=["<br>• ".join(tr(c) for c in x) for x in topm[f"{medalha}_criterios"]],
+                        hovertemplate="<b>%{y}</b> · %{x} " + tr(medalha) + "<br>• %{customdata}<extra></extra>")
         fig.update_layout(barmode="stack", legend_traceorder="normal")
-        fig.update_xaxes(title="critérios (1º, 2º e 3º lugares)", dtick=1, showgrid=True,
-                         gridcolor="rgba(137,135,129,0.25)")
+        fig.update_xaxes(title=T("critérios (1º, 2º e 3º lugares)", "criteria (1st, 2nd and 3rd places)"), dtick=1,
+                         showgrid=True, gridcolor="rgba(137,135,129,0.25)")
         fig.update_yaxes(showgrid=False)
-        st.plotly_chart(g._layout(fig, "Medalhas por jogador (15 com mais pontos)", 560),
+        st.plotly_chart(g._layout(fig, T("Medalhas por jogador (15 com mais pontos)",
+                                         "Medals per player (top 15 by points)"), 560),
                         width="stretch")
-        st.caption("Passe o mouse sobre as barras do gráfico para ver em quais critérios vieram as medalhas.")
-        lista = lambda col: ["; ".join(x) for x in med[col]]  # noqa: E731
+        st.caption(T("Passe o mouse sobre as barras do gráfico para ver em quais critérios vieram as medalhas.",
+                     "Hover over the bars to see which criteria the medals came from."))
+        lista = lambda col: ["; ".join(tr(c) for c in x) for x in med[col]]  # noqa: E731
+        col_top = T(f"Critérios no top {TOP_MED}", f"Criteria in the top {TOP_MED}")
+        col_em = [f"{i} {T('em', 'in')}" for i in ("🥇", "🥈", "🥉")]
         tm = pd.DataFrame({
-            "Jogador": med.index, "Pontos": med["pontos"], "🥇": med["ouro"], "🥈": med["prata"], "🥉": med["bronze"],
-            f"Critérios no top {TOP_MED}": med[f"top{TOP_MED}"], "Partidas": med["partidas"],
-            "🥇 em": lista("ouro_criterios"), "🥈 em": lista("prata_criterios"), "🥉 em": lista("bronze_criterios"),
+            T("Jogador", "Player"): med.index, T("Pontos", "Points"): med["pontos"], "🥇": med["ouro"],
+            "🥈": med["prata"], "🥉": med["bronze"],
+            col_top: med[f"top{TOP_MED}"], T("Partidas", "Matches"): med["partidas"],
+            col_em[0]: lista("ouro_criterios"), col_em[1]: lista("prata_criterios"), col_em[2]: lista("bronze_criterios"),
         })
         st.dataframe(tm, hide_index=True, width="stretch", height=420, column_config={
-            f"Critérios no top {TOP_MED}": st.column_config.NumberColumn(
-                help=f"Em quantos dos {len(pod)} critérios o jogador fica entre os {TOP_MED} melhores."),
-            **{c: st.column_config.TextColumn(width="large") for c in ("🥇 em", "🥈 em", "🥉 em")},
+            col_top: st.column_config.NumberColumn(
+                help=T(f"Em quantos dos {len(pod)} critérios o jogador fica entre os {TOP_MED} melhores.",
+                       f"In how many of the {len(pod)} criteria the player is among the top {TOP_MED}.")),
+            **{c: st.column_config.TextColumn(width="large") for c in col_em},
         })
-        st.caption(f"**Pontos:** 1º lugar vale 3, 2º vale 2 e 3º vale 1; empates se desfazem por mais 1º lugares. "
-                   "Assim, quem é forte em muitos critérios passa à frente de um especialista imbatível em poucos "
-                   "(na base inteira, Karlović lidera 4 critérios, todos de saque). A coluna **Critérios no top "
-                   f"{TOP_MED}** conta em quantos dos {len(pod)} critérios o jogador fica entre os {TOP_MED} melhores: "
-                   "é a medida de quem é bom em **tudo**, não só excepcional em poucos aspectos. Nas contagens "
-                   "(títulos, finais), quem tem zero não recebe medalha.")
+        st.caption(T(f"**Pontos:** 1º lugar vale 3, 2º vale 2 e 3º vale 1; empates se desfazem por mais 1º lugares. "
+                     "Assim, quem é forte em muitos critérios passa à frente de um especialista imbatível em poucos "
+                     "(na base inteira, Karlović lidera 4 critérios, todos de saque). A coluna **Critérios no top "
+                     f"{TOP_MED}** conta em quantos dos {len(pod)} critérios o jogador fica entre os {TOP_MED} melhores: "
+                     "é a medida de quem é bom em **tudo**, não só excepcional em poucos aspectos. Nas contagens "
+                     "(títulos, finais), quem tem zero não recebe medalha.",
+                     f"**Points:** 1st place is worth 3, 2nd is worth 2 and 3rd is worth 1; ties are broken by more 1st "
+                     "places. That way, a player who is strong across many criteria moves ahead of a specialist who is "
+                     "unbeatable in a few (across the whole database, Karlović leads 4 criteria, all of them on serve). "
+                     f"The **Criteria in the top {TOP_MED}** column counts in how many of the {len(pod)} criteria the "
+                     f"player is among the top {TOP_MED}: it measures who is good at **everything**, not just "
+                     "exceptional in a few areas. For counts (titles, finals), players with zero get no medal."))
 
 # =================================================================== ranking
 with aba_rank:
     c1, c2, c3 = st.columns([2, 2, 1])
-    chave = c1.selectbox("Critério", [c.chave for c in an.CRITERIOS], format_func=ROTULO_CRIT.get, key="rk_crit")
-    anos = c2.slider("Anos", A0, A1, (A0, A1), key="rk_anos", on_change=ajustar_minimo,
-                     args=("rk_anos", "rk_min"), help="Escolha o mesmo ano nas duas pontas para ver uma temporada só.")
-    minimo = c3.number_input("Mínimo de partidas", 1, 1000, step=10, key="rk_min",
-                             help="Só entra no ranking quem jogou pelo menos isso no recorte. " + AJUDA_MIN)
+    chave = c1.selectbox(T("Critério", "Criterion"), [c.chave for c in an.CRITERIOS], format_func=ROTULO_CRIT.get,
+                         key="rk_crit")
+    anos = c2.slider(L_ANOS, A0, A1, (A0, A1), key="rk_anos", on_change=ajustar_minimo,
+                     args=("rk_anos", "rk_min"), help=AJUDA_ANOS)
+    minimo = c3.number_input(L_MIN, 1, 1000, step=10, key="rk_min",
+                             help=T("Só entra no ranking quem jogou pelo menos isso no recorte. ",
+                                    "Only players with at least this many matches in the slice make the ranking. ")
+                             + AJUDA_MIN)
     c4, c5 = st.columns(2)
-    sups = c4.multiselect("Superfície", an.SUPERFICIES, default=an.SUPERFICIES, key="rk_sup")
-    nivs = c5.multiselect("Nível do torneio", an.NIVEIS, default=an.NIVEIS, key="rk_niv")
+    sups = c4.multiselect(L_SUP, an.SUPERFICIES, default=an.SUPERFICIES, key="rk_sup", format_func=tr)
+    nivs = c5.multiselect(L_NIV, an.NIVEIS, default=an.NIVEIS, key="rk_niv", format_func=tr)
     c = an.CRIT[chave]
+    nome_c = tr(c.nome)
+    media_circ = T("média do circuito", "tour average")
+    ic95 = T("IC 95%", "95% CI")
 
     tab, medias = tabela(anos, tuple(sups), tuple(nivs), int(minimo))
     rk = an.ranking_criterio(tab, chave) if len(tab) else tab
@@ -228,17 +281,21 @@ with aba_rank:
     else:
         media = medias[chave]
         m = st.columns([1, 1.8, 1, 1])
-        m[0].metric("Jogadores no ranking", br(len(rk), 0), help=f"com pelo menos {int(minimo)} partidas no recorte")
-        m[1].metric("1º lugar", rk.index[0])
-        m[2].metric(f"{c.nome} do 1º", fmt(c, rk.iloc[0][chave]))
-        m[3].metric("Média do circuito", br(media, 1) if c.tipo == "n" else fmt(c, media),
-                    help="Contagens: média por jogador do ranking. Demais critérios: razão das somas de todos "
-                         "os jogadores do recorte (por isso vitórias = 50% e dominance ratio = 1).")
+        m[0].metric(T("Jogadores no ranking", "Players in the ranking"), br(len(rk), 0),
+                    help=T(f"com pelo menos {int(minimo)} partidas no recorte",
+                           f"with at least {int(minimo)} matches in the slice"))
+        m[1].metric(T("1º lugar", "1st place"), rk.index[0])
+        m[2].metric(T(f"{c.nome} do 1º", f"{nome_c} (1st place)"), fmt(c, rk.iloc[0][chave]))
+        m[3].metric(T("Média do circuito", "Tour average"), br(media, 1) if c.tipo == "n" else fmt(c, media),
+                    help=T("Contagens: média por jogador do ranking. Demais critérios: razão das somas de todos "
+                           "os jogadores do recorte (por isso vitórias = 50% e dominance ratio = 1).",
+                           "Counts: average per player in the ranking. Other criteria: ratio of the sums over all "
+                           "players in the slice (which is why wins = 50% and dominance ratio = 1)."))
 
         top = rk.head(20).iloc[::-1]
         fig = go.Figure()
-        hover = [f"<b>{j}</b><br>{c.nome}: {fmt(c, v)}" + (f"<br>IC 95%: {fmt_ic(c, li, ls)}" if c.tipo == "%" else "")
-                 + f"<br>{br(n, 0)} partidas" for j, v, li, ls, n in
+        hover = [f"<b>{j}</b><br>{nome_c}: {fmt(c, v)}" + (f"<br>{ic95}: {fmt_ic(c, li, ls)}" if c.tipo == "%" else "")
+                 + f"<br>{br(n, 0)} {T('partidas', 'matches')}" for j, v, li, ls, n in
                  zip(top.index, top[chave], top.get(f"{chave}_ic_inf", top[chave]),
                      top.get(f"{chave}_ic_sup", top[chave]), top["partidas"])]
         if c.tipo == "n":
@@ -254,15 +311,15 @@ with aba_rank:
                             marker=dict(color=g.COR_POP, size=12, line=dict(color="white", width=1.5)),
                             hovertext=hover, hoverinfo="text")
         fig.add_vline(x=media, line_dash="dash", line_color=g.COR_NEUTRA, line_width=2,
-                      annotation_text=f"média do circuito: {fmt(c, media)}", annotation_position="top")
+                      annotation_text=f"{media_circ}: {fmt(c, media)}", annotation_position="top")
         eixo(fig, c)
         fig.update_yaxes(showgrid=False)
-        fig.update_xaxes(showgrid=True, gridcolor="rgba(137,135,129,0.25)", title=c.nome)
-        sub = ("ponto = valor do jogador · traço = IC 95% de Wilson" if c.tipo == "%"
-               else "menor é melhor" if not c.maior_melhor else "")
-        st.plotly_chart(g._layout(fig, f"Top 20 · {c.nome}" + (f"<br><sup>{sub}</sup>" if sub else ""), 640),
+        fig.update_xaxes(showgrid=True, gridcolor="rgba(137,135,129,0.25)", title=nome_c)
+        sub = (T("ponto = valor do jogador · traço = IC 95% de Wilson", "dot = player's value · line = 95% Wilson CI")
+               if c.tipo == "%" else T("menor é melhor", "lower is better") if not c.maior_melhor else "")
+        st.plotly_chart(g._layout(fig, f"Top 20 · {nome_c}" + (f"<br><sup>{sub}</sup>" if sub else ""), 640),
                         width="stretch")
-        g.como_ler(
+        g.como_ler(T(
             f"Cada linha é um jogador com pelo menos **{int(minimo)} partidas** no recorte. Os valores são "
             "**razões de somas**: em \"pontos ganhos no saque\", por exemplo, somamos todos os pontos que ele venceu "
             "sacando e dividimos por todos os pontos que sacou.\n\n"
@@ -273,28 +330,45 @@ with aba_rank:
             "cada temporada é uma \"amostra\" do nível de um jogador. Usamos o IC de **Wilson** em vez do de Wald (p̂ ± z·EP) porque ele continua válido "
             "perto de 0% ou 100% e com n pequeno, e nunca sai do intervalo [0, 1].\n\n"
             "Quando dois intervalos se sobrepõem bastante, os dados não permitem dizer com segurança quem é "
-            "melhor. Taxas por game, o dominance ratio e as contagens não têm IC de proporção.")
+            "melhor. Taxas por game, o dominance ratio e as contagens não têm IC de proporção.",
+            f"Each row is a player with at least **{int(minimo)} matches** in the slice. The values are "
+            "**ratios of sums**: for \"service points won\", for example, we add up all the points he won "
+            "on serve and divide by all the points he served.\n\n"
+            "**Why does the minimum number of matches matter?** Each player's value is an estimate based on the "
+            "matches he played, and the **line** is the **95% Wilson confidence interval**. With few "
+            "matches the interval gets wide and \"1st place\" may be just luck: lower the minimum to 10 and watch "
+            "unknown leaders appear, with huge intervals. That is the idea of sampling variability: "
+            "each season is a \"sample\" of a player's level. We use the **Wilson** CI instead of the Wald one "
+            "(p̂ ± z·SE) because it stays valid near 0% or 100% and with small n, and never leaves the [0, 1] "
+            "interval.\n\n"
+            "When two intervals overlap a lot, the data cannot say with confidence who is "
+            "better. Per-game rates, the dominance ratio and counts have no proportion CI."))
         if c.desc:
-            st.caption(f"**{c.nome}:** {c.desc}.")
+            st.caption(f"**{nome_c}:** {tr(c.desc)}.")
 
+        col_pctl, col_rank, col_base = T("Percentil", "Percentile"), T("Melhor ranking", "Best ranking"), "Base (n)"
         t = pd.DataFrame({
-            "Posição": rk["posicao"].map(lambda p: f"{p}º"),
-            "Jogador": rk.index,
-            "Partidas": rk["partidas"],
-            "V–D": [f"{v}–{d}" for v, d in zip(rk["V"], rk["D"])],
-            c.nome: [fmt(c, v) for v in rk[chave]],
+            T("Posição", "Position"): rk["posicao"].map(ordinal),
+            T("Jogador", "Player"): rk.index,
+            T("Partidas", "Matches"): rk["partidas"],
+            VD: [f"{v}–{d}" for v, d in zip(rk["V"], rk["D"])],
+            nome_c: [fmt(c, v) for v in rk[chave]],
         })
         if c.tipo == "%":
-            t["IC 95% (Wilson)"] = [fmt_ic(c, li, ls) for li, ls in zip(rk[f"{chave}_ic_inf"], rk[f"{chave}_ic_sup"])]
-            t["Base (n)"] = rk[f"{chave}_n"].astype(int)
-        t["Percentil"] = rk["percentil"].round(0)
-        t["Melhor ranking"] = rk["melhor_rank"]
+            t[T("IC 95% (Wilson)", "95% CI (Wilson)")] = [fmt_ic(c, li, ls) for li, ls in
+                                                          zip(rk[f"{chave}_ic_inf"], rk[f"{chave}_ic_sup"])]
+            t[col_base] = rk[f"{chave}_n"].astype(int)
+        t[col_pctl] = rk["percentil"].round(0)
+        t[col_rank] = rk["melhor_rank"]
         st.dataframe(t, hide_index=True, width="stretch", height=420, column_config={
-            "Percentil": st.column_config.ProgressColumn("Percentil", min_value=0, max_value=100, format="%.0f",
-                                                         help="% dos jogadores do ranking que ele supera"),
-            "Melhor ranking": st.column_config.NumberColumn(format="%d"),
-            "Base (n)": st.column_config.NumberColumn(help="Denominador da proporção: partidas, pontos, break "
-                                                           "points ou tie-breaks, conforme o critério."),
+            col_pctl: st.column_config.ProgressColumn(col_pctl, min_value=0, max_value=100, format="%.0f",
+                                                      help=T("% dos jogadores do ranking que ele supera",
+                                                             "% of the players in the ranking he outperforms")),
+            col_rank: st.column_config.NumberColumn(format="%d"),
+            col_base: st.column_config.NumberColumn(help=T("Denominador da proporção: partidas, pontos, break "
+                                                           "points ou tie-breaks, conforme o critério.",
+                                                           "Denominator of the proportion: matches, points, break "
+                                                           "points or tie-breaks, depending on the criterion.")),
         })
 
 # =================================================================== perfil
@@ -302,117 +376,143 @@ with aba_perfil:
     cont = jogadores()
     nomes = list(cont.index)
     c1, c2, c3 = st.columns([2, 2, 2])
-    nome = c1.selectbox("Jogador", nomes, index=nomes.index("Roger Federer"), key="pf_nome",
-                        format_func=lambda j: f"{j} ({br(cont[j], 0)} partidas)",
-                        help="Ordenados por número de partidas na base. Digite para buscar.")
-    anos_p = c2.slider("Anos", A0, A1, (A0, A1), key="pf_anos")
-    sups_p = c3.multiselect("Superfície", an.SUPERFICIES, default=an.SUPERFICIES, key="pf_sup")
+    partidas_ = T("partidas", "matches")
+    nome = c1.selectbox(T("Jogador", "Player"), nomes, index=nomes.index("Roger Federer"), key="pf_nome",
+                        format_func=lambda j: f"{j} ({br(cont[j], 0)} {partidas_})",
+                        help=T("Ordenados por número de partidas na base. Digite para buscar.",
+                               "Sorted by number of matches in the database. Type to search."))
+    anos_p = c2.slider(L_ANOS, A0, A1, (A0, A1), key="pf_anos")
+    sups_p = c3.multiselect(L_SUP, an.SUPERFICIES, default=an.SUPERFICIES, key="pf_sup", format_func=tr)
     p = perfil(nome, anos_p, tuple(sups_p))
 
     if not sups_p or p["vazio"]:
-        st.warning(f"{nome} não tem partidas nesse recorte.")
+        st.warning(T(f"{nome} não tem partidas nesse recorte.", f"{nome} has no matches in this slice."))
         st.stop()
 
     L, F = p["linha"], p["ficha"].set_index("chave")
+    de = T("de", "of")
     m = st.columns(6)
-    m[0].metric("Partidas", br(L["partidas"], 0), help=f"{p['anos'][0]}–{p['anos'][1]} no recorte")
-    m[1].metric("V–D", f"{int(L['V'])}–{int(L['D'])}")
-    m[2].metric("Vitórias", pct(L["vitorias"]))
-    m[3].metric("Títulos", br(L["titulos"], 0), help=f"{int(L['titulos_gs'])} de Grand Slam")
-    m[4].metric("Finais", br(L["finais"], 0))
-    m[5].metric("Melhor ranking", f"{p['melhor_rank']}º" if p["melhor_rank"] else "—",
-                help=f"atingido em {p['melhor_rank_ano']} (ranking no início de cada torneio)"
+    m[0].metric(T("Partidas", "Matches"), br(L["partidas"], 0),
+                help=f"{p['anos'][0]}–{p['anos'][1]} " + T("no recorte", "in the slice"))
+    m[1].metric(VD, f"{int(L['V'])}–{int(L['D'])}")
+    m[2].metric(T("Vitórias", "Wins"), pct(L["vitorias"]))
+    m[3].metric(T("Títulos", "Titles"), br(L["titulos"], 0),
+                help=T(f"{int(L['titulos_gs'])} de Grand Slam", f"{int(L['titulos_gs'])} at Grand Slams"))
+    m[4].metric(T("Finais", "Finals"), br(L["finais"], 0))
+    m[5].metric(T("Melhor ranking", "Best ranking"), ordinal(p["melhor_rank"]) if p["melhor_rank"] else "—",
+                help=T(f"atingido em {p['melhor_rank_ano']} (ranking no início de cada torneio)",
+                       f"reached in {p['melhor_rank_ano']} (ranking at the start of each tournament)")
                 if p["melhor_rank"] else None)
-    recorte = (f"{anos_p[0]}–{anos_p[1]}" if anos_p != (A0, A1) else "toda a base") + \
-              ("" if set(sups_p) == set(an.SUPERFICIES) else " · " + ", ".join(s.lower() for s in sups_p))
-    st.caption(f"Recorte: **{recorte}**. Percentil e posição comparam {nome} aos **{p['n_ref']} jogadores** com "
-               "pelo menos 100 partidas na base que têm 20 ou mais partidas nesse recorte.")
+    recorte = (f"{anos_p[0]}–{anos_p[1]}" if anos_p != (A0, A1) else T("toda a base", "the whole database")) + \
+              ("" if set(sups_p) == set(an.SUPERFICIES) else " · " + ", ".join(tr(s).lower() for s in sups_p))
+    st.caption(T(f"Recorte: **{recorte}**. Percentil e posição comparam {nome} aos **{p['n_ref']} jogadores** com "
+                 "pelo menos 100 partidas na base que têm 20 ou mais partidas nesse recorte.",
+                 f"Slice: **{recorte}**. Percentile and position compare {nome} with the **{p['n_ref']} players** "
+                 "who have at least 100 matches in the database and 20 or more matches in this slice."))
 
     # ---------------------------------------------------- pontos fortes/fracos
     jogo = p["ficha"][(p["ficha"]["tipo"] != "n") & p["ficha"]["percentil"].notna()].sort_values("percentil")
-    st.subheader("Pontos fortes e fracos")
+    st.subheader(T("Pontos fortes e fracos", "Strengths and weaknesses"))
     if len(jogo) >= 6:
         fortes, fracos = jogo.tail(3).iloc[::-1], jogo.head(3)
         cf, cw = st.columns(2)
         with cf:
-            st.markdown("**💪 Pontos fortes**")
+            st.markdown(T("**💪 Pontos fortes**", "**💪 Strengths**"))
             for _, r in fortes.iterrows():
                 c = an.CRIT[r["chave"]]
-                st.markdown(f"- **{c.nome}**: {fmt(c, r['valor'])} · melhor que {fmt_pctl(r['percentil'])} dos "
-                            f"demais ({r['posicao']}º de {r['total']})")
+                st.markdown(T(f"- **{c.nome}**: {fmt(c, r['valor'])} · melhor que {fmt_pctl(r['percentil'])} dos "
+                              f"demais ({r['posicao']}º de {r['total']})",
+                              f"- **{tr(c.nome)}**: {fmt(c, r['valor'])} · better than {fmt_pctl(r['percentil'])} of "
+                              f"the others ({ordinal(r['posicao'])} of {r['total']})"))
         with cw:
-            st.markdown("**🔧 Pontos fracos (relativos)**")
+            st.markdown(T("**🔧 Pontos fracos (relativos)**", "**🔧 Weaknesses (relative)**"))
             for _, r in fracos.iterrows():
                 c = an.CRIT[r["chave"]]
-                st.markdown(f"- **{c.nome}**: {fmt(c, r['valor'])} · melhor que {fmt_pctl(r['percentil'])} dos "
-                            f"demais ({r['posicao']}º de {r['total']})")
+                st.markdown(T(f"- **{c.nome}**: {fmt(c, r['valor'])} · melhor que {fmt_pctl(r['percentil'])} dos "
+                              f"demais ({r['posicao']}º de {r['total']})",
+                              f"- **{tr(c.nome)}**: {fmt(c, r['valor'])} · better than {fmt_pctl(r['percentil'])} of "
+                              f"the others ({ordinal(r['posicao'])} of {r['total']})"))
     fig = go.Figure(go.Bar(
-        x=jogo["percentil"], y=jogo["criterio"], orientation="h",
+        x=jogo["percentil"], y=jogo["criterio"].map(tr), orientation="h",
         marker_color=[g.COR_TOP if v >= 50 else g.COR_DEMAIS for v in jogo["percentil"]],
         text=[br(v, 0) for v in jogo["percentil"]], textposition="outside",
         customdata=np.c_[[fmt(an.CRIT[k], v) for k, v in zip(jogo["chave"], jogo["valor"])],
-                         [f"{a}º de {b}" for a, b in zip(jogo["posicao"], jogo["total"])]],
-        hovertemplate="<b>%{y}</b><br>valor: %{customdata[0]}<br>percentil %{x:.1f} · %{customdata[1]}<extra></extra>"))
+                         [f"{ordinal(a)} {de} {b}" for a, b in zip(jogo["posicao"], jogo["total"])]],
+        hovertemplate="<b>%{y}</b><br>" + T("valor", "value") + ": %{customdata[0]}<br>" + T("percentil", "percentile")
+                      + " %{x:.1f} · %{customdata[1]}<extra></extra>"))
     fig.add_vline(x=50, line_dash="dash", line_color=g.COR_NEUTRA, line_width=2,
-                  annotation_text="50 = jogador típico", annotation_position="top")
-    fig.update_xaxes(range=[0, 108], title="Percentil (% dos jogadores de referência que ele supera)")
+                  annotation_text=T("50 = jogador típico", "50 = typical player"), annotation_position="top")
+    fig.update_xaxes(range=[0, 108], title=T("Percentil (% dos jogadores de referência que ele supera)",
+                                             "Percentile (% of reference players he outperforms)"))
     fig.update_yaxes(showgrid=False)
-    st.plotly_chart(g._layout(fig, f"{nome} · percentil em cada aspecto do jogo", 520), width="stretch")
-    g.como_ler("O **percentil** diz que fração dos outros jogadores de referência ele supera naquele critério: 90 significa "
-               "melhor que 90% deles; 50 é o jogador típico. Barras **magenta** ficam acima da mediana; **cinza**, "
-               "abaixo. Em duplas faltas por game, menor é melhor, então o percentil já vem invertido. \"Pontos "
-               "fracos\" são relativos: até um campeão tem aspectos em que é apenas mediano.")
+    st.plotly_chart(g._layout(fig, T(f"{nome} · percentil em cada aspecto do jogo",
+                                     f"{nome} · percentile in each aspect of the game"), 520), width="stretch")
+    g.como_ler(T("O **percentil** diz que fração dos outros jogadores de referência ele supera naquele critério: 90 significa "
+                 "melhor que 90% deles; 50 é o jogador típico. Barras **magenta** ficam acima da mediana; **cinza**, "
+                 "abaixo. Em duplas faltas por game, menor é melhor, então o percentil já vem invertido. \"Pontos "
+                 "fracos\" são relativos: até um campeão tem aspectos em que é apenas mediano.",
+                 "The **percentile** says what share of the other reference players he outperforms on that criterion: "
+                 "90 means better than 90% of them; 50 is the typical player. **Magenta** bars are above the median; "
+                 "**grey** ones, below. For double faults per game, lower is better, so the percentile is already "
+                 "inverted. \"Weaknesses\" are relative: even a champion has areas where he is merely average."))
 
     # ---------------------------------------------------------- ficha completa
-    st.subheader("Ficha completa · critério a critério")
+    st.subheader(T("Ficha completa · critério a critério", "Full profile · criterion by criterion"))
     fic = p["ficha"]
+    col_pctl = T("Percentil", "Percentile")
     tf = pd.DataFrame({
-        "Grupo": fic["grupo"],
-        "Critério": fic["criterio"],
-        "Valor": [fmt(an.CRIT[k], v) for k, v in zip(fic["chave"], fic["valor"])],
-        "IC 95% (Wilson)": [fmt_ic(an.CRIT[k], li, ls) for k, li, ls in zip(fic["chave"], fic["ic_inf"], fic["ic_sup"])],
-        "Média do circuito": [br(v, 1) if an.CRIT[k].tipo == "n" else fmt(an.CRIT[k], v)
-                              for k, v in zip(fic["chave"], fic["media"])],
-        "Percentil": fic["percentil"].round(0),
-        "Posição": [f"{a}º de {b}" if a else "—" for a, b in zip(fic["posicao"], fic["total"])],
+        T("Grupo", "Group"): fic["grupo"].map(tr),
+        T("Critério", "Criterion"): fic["criterio"].map(tr),
+        T("Valor", "Value"): [fmt(an.CRIT[k], v) for k, v in zip(fic["chave"], fic["valor"])],
+        T("IC 95% (Wilson)", "95% CI (Wilson)"): [fmt_ic(an.CRIT[k], li, ls) for k, li, ls in
+                                                  zip(fic["chave"], fic["ic_inf"], fic["ic_sup"])],
+        T("Média do circuito", "Tour average"): [br(v, 1) if an.CRIT[k].tipo == "n" else fmt(an.CRIT[k], v)
+                                                 for k, v in zip(fic["chave"], fic["media"])],
+        col_pctl: fic["percentil"].round(0),
+        T("Posição", "Position"): [f"{ordinal(a)} {de} {b}" if a else "—" for a, b in zip(fic["posicao"], fic["total"])],
     })
     st.dataframe(tf, hide_index=True, width="stretch", height=640, column_config={
-        "Percentil": st.column_config.ProgressColumn("Percentil", min_value=0, max_value=100, format="%.0f"),
+        col_pctl: st.column_config.ProgressColumn(col_pctl, min_value=0, max_value=100, format="%.0f"),
     })
-    st.caption("Média do circuito: razão das somas de todos os jogadores no recorte (vitórias = 50% e dominance ratio "
-               "= 1 por construção); nas contagens, média por jogador de referência. O IC só existe para proporções.")
+    st.caption(T("Média do circuito: razão das somas de todos os jogadores no recorte (vitórias = 50% e dominance ratio "
+                 "= 1 por construção); nas contagens, média por jogador de referência. O IC só existe para proporções.",
+                 "Tour average: ratio of the sums over all players in the slice (wins = 50% and dominance ratio "
+                 "= 1 by construction); for counts, the average per reference player. The CI exists only for "
+                 "proportions."))
 
     # ----------------------------------------------------------- superfícies
-    st.subheader("Cada aspecto por superfície")
+    st.subheader(T("Cada aspecto por superfície", "Every aspect by surface"))
     ps = p["por_superficie"]
     ps = ps[ps["partidas"] > 0]
     cg, ct = st.columns([2, 3])
     with cg:
         fig = go.Figure(go.Bar(
-            x=ps.index, y=ps["vitorias"], marker_color=[g.CORES_SUP.get(s, g.COR_NEUTRA) for s in ps.index],
+            x=[tr(s) for s in ps.index], y=ps["vitorias"], marker_color=[g.CORES_SUP.get(s, g.COR_NEUTRA) for s in ps.index],
             error_y=dict(type="data", symmetric=False, array=ps["vitorias_ic_sup"] - ps["vitorias"],
                          arrayminus=ps["vitorias"] - ps["vitorias_ic_inf"], color=g.COR_NEUTRA, thickness=1.5),
             text=[pct(v) for v in ps["vitorias"]], textposition="inside", insidetextanchor="end",
             customdata=np.c_[ps["V"], ps["D"]],
-            hovertemplate="<b>%{x}</b><br>%{y:.1%} de vitórias<br>%{customdata[0]}–%{customdata[1]}<extra></extra>"))
+            hovertemplate="<b>%{x}</b><br>%{y:.1%} " + T("de vitórias", "wins")
+                          + "<br>%{customdata[0]}–%{customdata[1]}<extra></extra>"))
         fig.add_hline(y=0.5, line_dash="dash", line_color=g.COR_NEUTRA)
-        fig.update_yaxes(tickformat=".0%", range=[0, 1.05], title="% de vitórias")
-        st.plotly_chart(g._layout(fig, "Vitórias por superfície<br><sup>traço = IC 95% de Wilson</sup>", 400),
+        fig.update_yaxes(tickformat=".0%", range=[0, 1.05], title=T("% de vitórias", "% of wins"))
+        st.plotly_chart(g._layout(fig, T("Vitórias por superfície<br><sup>traço = IC 95% de Wilson</sup>",
+                                         "Wins by surface<br><sup>line = 95% Wilson CI</sup>"), 400),
                         width="stretch")
     with ct:
-        linhas = {"Partidas": [br(v, 0) for v in ps["partidas"]],
-                  "V–D": [f"{v}–{d}" for v, d in zip(ps["V"], ps["D"])]}
+        linhas = {T("Partidas", "Matches"): [br(v, 0) for v in ps["partidas"]],
+                  VD: [f"{v}–{d}" for v, d in zip(ps["V"], ps["D"])]}
         for c in an.CRITERIOS:
-            linhas[c.nome] = [fmt(c, v) for v in ps[c.chave]]
-        tsup = pd.DataFrame(linhas, index=ps.index).T
-        tsup.index.name = "Critério"
+            linhas[tr(c.nome)] = [fmt(c, v) for v in ps[c.chave]]
+        tsup = pd.DataFrame(linhas, index=[tr(s) for s in ps.index]).T
+        tsup.index.name = T("Critério", "Criterion")
         st.dataframe(tsup, width="stretch", height=640)
 
     # ---------------------------------------------------------- temporadas
-    st.subheader("Evolução por temporada")
+    st.subheader(T("Evolução por temporada", "Season by season"))
     an_ = p["anual"]
     opcoes = [c.chave for c in an.CRITERIOS]
-    ch = st.selectbox("Critério", opcoes, format_func=ROTULO_CRIT.get, key="pf_crit")
+    ch = st.selectbox(T("Critério", "Criterion"), opcoes, format_func=ROTULO_CRIT.get, key="pf_crit")
     c = an.CRIT[ch]
     fig = go.Figure()
     erro = None
@@ -422,44 +522,54 @@ with aba_perfil:
     fig.add_scatter(x=an_.index, y=an_[ch], mode="lines+markers", line=dict(color=g.COR_POP, width=3),
                     marker=dict(size=8), error_y=erro, customdata=an_["partidas"],
                     hovertext=[fmt(c, v) for v in an_[ch]],
-                    hovertemplate="%{x}: %{hovertext} (%{customdata} partidas)<extra></extra>")
+                    hovertemplate="%{x}: %{hovertext} (%{customdata} " + partidas_ + ")<extra></extra>")
     if c.tipo != "n":
         fig.add_hline(y=F.loc[ch, "media"], line_dash="dash", line_color=g.COR_NEUTRA,
-                      annotation_text=f"média do circuito: {fmt(c, F.loc[ch, 'media'])}",
+                      annotation_text=f"{T('média do circuito', 'tour average')}: {fmt(c, F.loc[ch, 'media'])}",
                       annotation_position="bottom right")
     eixo(fig, c, eixo_x=False)
     fig.update_xaxes(dtick=1 if len(an_) <= 15 else 2)
     fig.update_layout(showlegend=False)
-    st.plotly_chart(g._layout(fig, f"{nome} · {c.nome} por temporada"
-                              + ("<br><sup>traço = IC 95% de Wilson; anos com poucas partidas têm IC largo</sup>"
+    st.plotly_chart(g._layout(fig, T(f"{nome} · {c.nome} por temporada", f"{nome} · {tr(c.nome)} by season")
+                              + (T("<br><sup>traço = IC 95% de Wilson; anos com poucas partidas têm IC largo</sup>",
+                                   "<br><sup>line = 95% Wilson CI; years with few matches have a wide CI</sup>")
                                  if c.tipo == "%" else ""), 400), width="stretch")
     c1, c2 = st.columns(2)
     with c1:
         fig = go.Figure(go.Bar(x=an_.index, y=an_["partidas"], marker_color=g.COR_POP,
                                customdata=np.c_[an_["V"], an_["D"]],
-                               hovertemplate="%{x}: %{y} partidas (%{customdata[0]}–%{customdata[1]})<extra></extra>"))
-        fig.update_yaxes(title="partidas")
-        st.plotly_chart(g._layout(fig, "Partidas por temporada", 320), width="stretch")
+                               hovertemplate="%{x}: %{y} " + partidas_
+                                             + " (%{customdata[0]}–%{customdata[1]})<extra></extra>"))
+        fig.update_yaxes(title=partidas_)
+        st.plotly_chart(g._layout(fig, T("Partidas por temporada", "Matches per season"), 320), width="stretch")
     with c2:
         fig = go.Figure(go.Scatter(x=an_.index, y=an_["melhor_rank"], mode="lines+markers",
                                    line=dict(color=g.COR_TOP, width=3), marker=dict(size=7),
-                                   hovertemplate="%{x}: %{y}º<extra>melhor ranking do ano</extra>"))
-        fig.update_yaxes(autorange="reversed", title="posição (1 = topo)")
-        st.plotly_chart(g._layout(fig, "Melhor ranking do ano", 320), width="stretch")
-    st.caption("O ranking é o do início de cada torneio, por isso o \"melhor ranking do ano\" é o melhor que ele tinha "
-               "ao entrar em quadra naquela temporada.")
+                                   hovertemplate=T("%{x}: %{y}º<extra>melhor ranking do ano</extra>",
+                                                   "%{x}: no. %{y}<extra>best ranking of the year</extra>")))
+        fig.update_yaxes(autorange="reversed", title=T("posição (1 = topo)", "position (1 = top)"))
+        st.plotly_chart(g._layout(fig, T("Melhor ranking do ano", "Best ranking of the year"), 320), width="stretch")
+    st.caption(T("O ranking é o do início de cada torneio, por isso o \"melhor ranking do ano\" é o melhor que ele tinha "
+                 "ao entrar em quadra naquela temporada.",
+                 "The ranking is the one at the start of each tournament, so the \"best ranking of the year\" is the "
+                 "best he held when walking on court that season."))
 
     # --------------------------------------------------------------- títulos
-    st.subheader("Títulos e finais")
+    st.subheader(T("Títulos e finais", "Titles and finals"))
     if p["por_nivel"].empty:
-        st.markdown(f"{nome} não disputou finais nesse recorte.")
+        st.markdown(T(f"{nome} não disputou finais nesse recorte.", f"{nome} played no finals in this slice."))
     else:
         c1, c2 = st.columns([1, 3])
-        c1.dataframe(p["por_nivel"], width="stretch")
-        tt = p["titulos"].rename(columns={"ano": "Ano", "torneio": "Torneio", "nivel": "Nível",
-                                          "superficie": "Superfície", "perdedor": "Vice", "placar": "Placar"})
+        pn = p["por_nivel"].rename(columns={"Títulos": T("Títulos", "Titles"), "Finais": T("Finais", "Finals")},
+                       index=lambda x: tr(x))
+        c1.dataframe(pn, width="stretch")
+        col_ano = T("Ano", "Year")
+        tt = p["titulos"].assign(nivel=lambda d: d["nivel"].map(tr), superficie=lambda d: d["superficie"].map(tr))
+        tt = tt.rename(columns={"ano": col_ano, "torneio": T("Torneio", "Tournament"), "nivel": T("Nível", "Level"),
+                                "superficie": T("Superfície", "Surface"), "perdedor": T("Vice", "Runner-up"),
+                                "placar": T("Placar", "Score")})
         if tt.empty:
-            c2.markdown("Nenhum título no recorte.")
+            c2.markdown(T("Nenhum título no recorte.", "No titles in this slice."))
         else:
             c2.dataframe(tt, hide_index=True, width="stretch", height=380,
-                         column_config={"Ano": st.column_config.NumberColumn(format="%d")})
+                         column_config={col_ano: st.column_config.NumberColumn(format="%d")})

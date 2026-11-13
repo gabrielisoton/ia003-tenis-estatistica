@@ -3,22 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>O circuito · Tênis em números</title>
+<title data-en="The tour · Tennis by numbers">O circuito · Tênis em números</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/estilo.css?v=2">
+<link rel="stylesheet" href="assets/estilo.css?v=4">
 <script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>
-<script src="assets/site.js?v=3"></script>
-<script src="assets/comum.js?v=3"></script>
-
-<script src="assets/descritiva.js?v=2"></script>
+<script src="assets/site.js?v=4"></script>
+<script src="assets/comum.js?v=5"></script>
+<script src="assets/descritiva.js?v=3"></script>
 </head>
 <body>
 <header class="topo"><div id="quadra"></div><div class="topo-dentro">
-  <span class="etiqueta">Visão geral · O circuito</span>
-  <h1>O circuito em números</h1>
-  <p>Todas as partidas do circuito principal da ATP concluídas entre 2000 e 2025: superfícies, duração, aces,
+  <span class="etiqueta"><span data-l="pt">Visão geral · O circuito</span><span data-l="en">Overview · The tour</span></span>
+  <h1><span data-l="pt">O circuito em números</span><span data-l="en">The tour in numbers</span></h1>
+  <p data-l="pt">Todas as partidas do circuito principal da ATP concluídas entre 2000 e 2025: superfícies, duração, aces,
     ranking e muito mais. Use os filtros para recortar por superfície, nível do torneio, anos ou jogadores do Top N.</p>
+  <p data-l="en">Every completed match on the main ATP tour between 2000 and 2025: surfaces, duration, aces, ranking and
+    much more. Use the filters to slice by surface, tournament level, years or Top N players.</p>
 </div></header>
 <main class="conteudo">
   <div id="filtros"></div>
@@ -36,8 +37,8 @@ document.getElementById("quadra").innerHTML = svgQuadra();
   const desenhar = () => {
     const idx = aplicarFiltros(pop, f);
     placarFiltrado(document.getElementById("placar"), pop, idx);
-    if (!idx.length) { raiz.querySelector("#quali").innerHTML = "<p>Nenhuma partida com esses filtros.</p>"; return; }
-    painelDescritivo(raiz, meta, { nome: "População", cor: CORES.pop, d: pop, idx }, null);
+    if (!idx.length) { raiz.querySelector("#quali").innerHTML = `<p>${T("Nenhuma partida com esses filtros.", "No matches with these filters.")}</p>`; return; }
+    painelDescritivo(raiz, meta, { nome: T("População", "Population"), cor: CORES.pop, d: pop, idx }, null);
   };
   montarFiltros(document.getElementById("filtros"), meta, f, desenhar);
   desenhar();
