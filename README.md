@@ -11,7 +11,7 @@ O projeto compara **toda a população** de partidas do circuito principal da AT
 - Painel 2 · Amostra: https://gabrielisoton.github.io/ia003-tenis-estatistica/amostra.html
 - Painel 3 · Inferência: https://gabrielisoton.github.io/ia003-tenis-estatistica/inferencia.html
 
-**Extras (fora da avaliação):** [Explorar](https://gabrielisoton.github.io/ia003-tenis-estatistica/explorar.html) (Top N × demais, ranking × zebras, linha do tempo) e [Jogadores](https://gabrielisoton.github.io/ia003-tenis-estatistica/jogadores.html) (ranking por critério e perfil de cada jogador).
+**Extras (fora da avaliação):** [Explorar](https://gabrielisoton.github.io/ia003-tenis-estatistica/explorar.html) (Top N × demais, ranking × zebras, linha do tempo) e [Jogadores](https://gabrielisoton.github.io/ia003-tenis-estatistica/jogadores.html) (líderes de todos os critérios com quadro de medalhas, ranking por critério e perfil de cada jogador).
 
 **App (Streamlit Community Cloud):** https://ia003-tenis-estatistica.streamlit.app. Os painéis 1–3 ficam no menu lateral, e as páginas "Extra" (Explorar e Jogadores) estão fora da avaliação.
 

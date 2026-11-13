@@ -10,13 +10,30 @@
 <script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>
 <script src="assets/comum.js?v=2"></script>
 <script src="assets/descritiva.js?v=2"></script>
-<script src="assets/jogadores.js?v=2"></script>
+<script src="assets/jogadores.js?v=3"></script>
 <style>
   .barra-pct { position: relative; height: 10px; background: #ecebe5; border-radius: 6px; min-width: 90px; }
   .barra-pct i { position: absolute; inset: 0 auto 0 0; border-radius: 6px; }
   .fortes { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
   .fortes ul { margin: .3rem 0 0; padding-left: 1.1rem; }
-  input.busca { min-width: 280px; }
+  input.busca { min-width: 280px; padding-right: 30px; }
+  .combo { position: relative; display: inline-block; }
+  .combo-seta { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); border: 0; background: none;
+    font-size: 1rem; color: var(--tinta-3); cursor: pointer; padding: 2px 6px; }
+  .combo-lista { position: absolute; z-index: 40; top: calc(100% + 4px); left: 0; min-width: 100%; max-height: 340px;
+    overflow: auto; margin: 0; padding: 4px; list-style: none; background: #fff; border: 1px solid var(--borda);
+    border-radius: 10px; box-shadow: 0 10px 30px rgba(15,61,46,.18); }
+  .combo-lista li { display: flex; justify-content: space-between; gap: 14px; padding: 6px 10px; border-radius: 7px;
+    cursor: pointer; white-space: nowrap; }
+  .combo-lista li small { color: var(--tinta-3); font-variant-numeric: tabular-nums; }
+  .combo-lista li.foco { background: #eef3ef; }
+  .combo-lista li.sel { font-weight: 700; }
+  .combo-lista li.vazio { color: var(--tinta-3); cursor: default; font-style: italic; }
+  .medalha { font-size: .92rem; }
+  .medalha small { color: var(--tinta-3); margin-left: 4px; }
+  .tag { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: .8rem; font-weight: 600; }
+  .tag.iso { background: #e3f6e3; color: #0a6b0a; }
+  .tag.emp { background: #f1efe8; color: var(--tinta-2); }
 </style>
 </head>
 <body>
@@ -27,10 +44,28 @@
     Challengers, qualificatórios, Copa Davis nem Olimpíadas</b>, então diferem das estatísticas oficiais de carreira.</p>
 </div></header>
 <main class="conteudo" id="area">
-  <div class="abas" id="abas-j" style="margin-top:22px"><button class="on" data-a="rank">🏅 Ranking por critério</button>
+  <div class="abas" id="abas-j" style="margin-top:22px"><button class="on" data-a="lid">🏆 Líderes de cada critério</button>
+    <button data-a="rank">🏅 Ranking por critério</button>
     <button data-a="perfil">🎾 Perfil do jogador</button></div>
 
-  <section class="painel-aba" data-p="rank">
+  <section class="painel-aba" data-p="lid">
+    <div class="filtros" style="position:static">
+      <div class="grupo"><span class="rot">Anos</span><select class="sel" id="l-a0"></select>–<select class="sel" id="l-a1"></select></div>
+      <div class="grupo"><span class="rot">Mínimo de partidas</span><input class="sel" id="l-min" type="number" value="100" min="1" step="10" style="width:90px"></div>
+      <div class="grupo"><span class="rot">Superfície</span><span id="l-sup"></span></div>
+      <div class="grupo"><span class="rot">Nível</span><span id="l-niv"></span></div>
+    </div>
+    <div id="l-placar"></div>
+    <h2>Pódio de cada critério</h2>
+    <div class="cartao rolagem" style="overflow:auto"><table class="t" id="l-podio"></table></div>
+    <div id="l-comoler"></div>
+    <h2>Quadro de medalhas · quem domina mais critérios</h2>
+    <div class="cartao"><div id="l-g" class="grafico" style="min-height:560px"></div></div>
+    <div class="cartao rolagem" style="max-height:520px;overflow:auto;margin-top:14px"><table class="t" id="l-med"></table></div>
+    <p class="nota" id="l-nota"></p>
+  </section>
+
+  <section class="painel-aba" data-p="rank" hidden>
     <div class="filtros" style="position:static">
       <div class="grupo"><span class="rot">Critério</span><select class="sel" id="r-crit"></select></div>
       <div class="grupo"><span class="rot">Anos</span><select class="sel" id="r-a0"></select>–<select class="sel" id="r-a1"></select></div>
@@ -46,9 +81,9 @@
   </section>
 
   <section class="painel-aba" data-p="perfil" hidden>
-    <div class="filtros" style="position:static">
-      <div class="grupo"><span class="rot">Jogador</span><input class="sel busca" id="p-nome" list="lista-nomes" value="Roger Federer">
-        <datalist id="lista-nomes"></datalist></div>
+    <div class="filtros" style="position:relative;top:0;z-index:30">
+      <div class="grupo"><span class="rot">Jogador</span><input class="sel busca" id="p-nome" value="Roger Federer"
+        placeholder="Digite ou escolha um jogador" aria-label="Jogador"></div>
       <div class="grupo"><span class="rot">Anos</span><select class="sel" id="p-a0"></select>–<select class="sel" id="p-a1"></select></div>
       <div class="grupo"><span class="rot">Superfície</span><span id="p-sup"></span></div>
     </div>
@@ -76,6 +111,67 @@ ligarAbas(document.getElementById("area"), "#abas-j");
   };
   const titulo = t => ({ text: t, x: 0, font: { size: 16, family: "Barlow Condensed" } });
   const eixoC = c => ({ tickformat: c.tipo === "%" ? ".0%" : null });
+
+  /* ================= líderes ================= */
+  const LD = { a0: 2000, a1: 2025, sup: new Set([0, 1, 2, 3]), niv: new Set([0, 1, 2, 3, 4]) };
+  const COR_MED = { ouro: "#c98500", prata: "#a8a6a0", bronze: "#8c5a3c" }, ICO = { ouro: "🥇", prata: "🥈", bronze: "🥉" };
+  const TOPN = 10;
+  document.getElementById("l-a0").innerHTML = opAnos(2000); document.getElementById("l-a1").innerHTML = opAnos(2025);
+  document.getElementById("l-comoler").innerHTML = comoLer(`Cada linha é um critério, com os <b>três melhores</b> jogadores do
+    recorte (entre os que têm o mínimo de partidas) e o valor de cada um. Em duplas faltas por game, o melhor é quem comete
+    <b>menos</b>.<br><br><b>Vantagem do 1º</b> é a distância para o 2º colocado (em pontos percentuais nas proporções).<br><br>
+    <b>Liderança isolada × empate técnico:</b> nas proporções, comparamos os <b>IC 95% de Wilson</b> do 1º e do 2º. Se os
+    intervalos <b>não se tocam</b>, a liderança é <i>isolada</i>: dificilmente é fruto do acaso das partidas que cada um jogou. Se
+    eles se sobrepõem, é um <i>empate técnico</i>: com esses dados não dá para afirmar quem é melhor. É um critério conservador
+    (intervalos que se tocam um pouco ainda podem indicar diferença num teste formal), mas mostra a ideia de variabilidade
+    amostral do 3º set.`);
+  const fmtVant = (c, v) => v === undefined || v === null ? "—" : c.tipo === "%" ? `+${br(100 * v, 1)} p.p.`
+    : "+" + (c.tipo === "taxa" ? br(v, 3) : c.tipo === "razao" ? br(v, 2) : br(v, 0));
+
+  function desenharLideres() {
+    const minimo = Math.max(1, +document.getElementById("l-min").value || 1);
+    const { tab } = tabelaJogadores(J, [LD.a0, LD.a1], LD.sup, LD.niv, minimo);
+    const { podio, med } = lideres(tab, CR, TOPN);
+    const vazio = !podio.length;
+    document.querySelectorAll("#l-podio, #l-med").forEach(t => t.innerHTML = "");
+    if (vazio) { document.getElementById("l-placar").innerHTML = `<div class="aviso">Nenhum jogador com esses filtros. Reduza o mínimo de partidas ou amplie o recorte.</div>`;
+      Plotly.purge("l-g"); document.getElementById("l-nota").innerHTML = ""; return; }
+    const d = med[0], comIC = podio.filter(p => p.lideranca);
+    placar(document.getElementById("l-placar"), [
+      { rot: "Mais dominante", num: d.nome, sub: "mais pontos no quadro de medalhas (1º = 3, 2º = 2, 3º = 1)" },
+      { rot: "Pontos", num: br(d.pontos, 0), sub: `${d.ouro} 🥇 · ${d.prata} 🥈 · ${d.bronze} 🥉 em ${podio.length} critérios` },
+      { rot: `Vezes no top ${TOPN}`, num: br(d.top, 0), sub: `em ${podio.length} critérios` },
+      { rot: "Lideranças isoladas", num: `${comIC.filter(p => p.lideranca === "isolada").length} de ${comIC.length}`, sub: "IC 95% do 1º não toca o do 2º" },
+    ]);
+    const cel = (p, m) => p[m] ? `<span class="medalha">${p[m]}<small>${fmtC(p.c, p[m + "_valor"])}</small></span>` : "—";
+    document.getElementById("l-podio").innerHTML = `<tr><th>Grupo</th><th>Critério</th><th>🥇 1º</th><th>🥈 2º</th><th>🥉 3º</th>
+      <th>Vantagem do 1º</th><th>Liderança</th></tr>` + podio.map(p => `<tr><td>${p.c.grupo}</td><td><b>${p.c.nome}</b></td>
+      <td>${cel(p, "ouro")}</td><td>${cel(p, "prata")}</td><td>${cel(p, "bronze")}</td><td class="n">${fmtVant(p.c, p.vantagem)}</td>
+      <td>${p.lideranca ? `<span class="tag ${p.lideranca === "isolada" ? "iso" : "emp"}">${p.lideranca}</span>` : "—"}</td></tr>`).join("");
+    const t15 = med.slice(0, 15).reverse();
+    plot(document.getElementById("l-g"), MEDALHAS.map(m => ({ type: "bar", orientation: "h", name: `${ICO[m]} ${m}`,
+      y: t15.map(r => r.nome), x: t15.map(r => r[m]), marker: { color: COR_MED[m] },
+      text: t15.map(r => r[m] || ""), textposition: "inside", hovertemplate: `<b>%{y}</b><br>%{x} ${m}<extra></extra>` })),
+      { height: 560, barmode: "stack", legend: { traceorder: "normal", orientation: "h", y: 1.02, yanchor: "bottom", x: 0 },
+        title: titulo("Medalhas por jogador (15 com mais pontos)"),
+        xaxis: { title: "critérios (1º, 2º e 3º lugares)", dtick: 1, showgrid: true, gridcolor: "rgba(137,135,129,.22)" },
+        yaxis: { showgrid: false, automargin: true }, margin: { l: 150, r: 20, t: 90, b: 50 } });
+    document.getElementById("l-med").innerHTML = `<tr><th>Jogador</th><th>Pontos</th><th>🥇</th><th>🥈</th><th>🥉</th><th>Top ${TOPN}</th>
+      <th>Partidas</th><th>Lidera em</th></tr>` + med.map(r => `<tr><td>${r.nome}</td><td class="n"><b>${r.pontos}</b></td>
+      <td class="n">${r.ouro}</td><td class="n">${r.prata}</td><td class="n">${r.bronze}</td><td class="n">${r.top}</td>
+      <td class="n">${br(r.partidas, 0)}</td><td>${r.criterios.join("; ")}</td></tr>`).join("");
+    document.getElementById("l-nota").innerHTML = `<b>Pontos:</b> 1º lugar vale 3, 2º vale 2 e 3º vale 1; empates se desfazem por
+      mais 1º lugares. Assim, quem é forte em muitos critérios passa à frente de um especialista imbatível em poucos (na base inteira,
+      Karlović lidera 4 critérios, todos de saque). A coluna <b>Top ${TOPN}</b> conta em quantos dos ${podio.length} critérios o
+      jogador fica entre os ${TOPN} melhores: é a medida de quem é bom em <b>tudo</b>. Nas contagens (títulos, finais), quem tem zero
+      não recebe medalha.`;
+  }
+  chips(document.getElementById("l-sup"), SUPS, LD.sup, CORES.sup, desenharLideres);
+  chips(document.getElementById("l-niv"), NIVS, LD.niv, null, desenharLideres);
+  document.getElementById("l-min").addEventListener("change", desenharLideres);
+  ["l-a0", "l-a1"].forEach(id => document.getElementById(id).addEventListener("change", e => {
+    LD[id.slice(2)] = +e.target.value; if (LD.a0 > LD.a1) [LD.a0, LD.a1] = [LD.a1, LD.a0]; desenharLideres(); }));
+  desenharLideres();
 
   /* ================= ranking ================= */
   const R = { a0: 2000, a1: 2025, sup: new Set([0, 1, 2, 3]), niv: new Set([0, 1, 2, 3, 4]) };
@@ -140,14 +236,13 @@ ligarAbas(document.getElementById("area"), "#abas-j");
   /* ================= perfil ================= */
   const P = { a0: 2000, a1: 2025, sup: new Set([0, 1, 2, 3]) };
   const car = carreira(J);
-  document.getElementById("lista-nomes").innerHTML = J.nomes.map((n, i) => `<option value="${n}">${br(car.get(i), 0)} partidas</option>`).join("");
   document.getElementById("p-a0").innerHTML = opAnos(2000); document.getElementById("p-a1").innerHTML = opAnos(2025);
   let critAnual = "vitorias";
 
   function desenharPerfil() {
     const nome = document.getElementById("p-nome").value.trim();
     const corpo = document.getElementById("p-corpo");
-    if (!J.nomes.includes(nome)) { corpo.innerHTML = `<div class="aviso">Escolha um jogador da lista (digite parte do nome).</div>`; return; }
+    if (!J.nomes.includes(nome)) { corpo.innerHTML = `<div class="aviso">Escolha um jogador da lista (clique no campo ou digite parte do nome).</div>`; return; }
     const p = perfil(J, nome, [P.a0, P.a1], P.sup);
     if (p.vazio) { corpo.innerHTML = `<div class="aviso">${nome} não tem partidas nesse recorte.</div>`; return; }
     const e = p.eu, fic = p.ficha;
@@ -248,7 +343,7 @@ ligarAbas(document.getElementById("area"), "#abas-j");
         ${tit.map(t => `<tr><td>${t.ano}</td><td>${t.torneio}</td><td>${t.nivel}</td><td>${t.sup}</td><td>${t.oponente}</td><td>${t.placar}</td></tr>`).join("")}</table>` : "Nenhum título no recorte."}</div></div>`;
   }
   chips(document.getElementById("p-sup"), SUPS, P.sup, CORES.sup, desenharPerfil);
-  document.getElementById("p-nome").addEventListener("change", desenharPerfil);
+  combobox(document.getElementById("p-nome"), J.nomes, i => `${br(car.get(i), 0)} partidas`, desenharPerfil);
   ["p-a0", "p-a1"].forEach(id => document.getElementById(id).addEventListener("change", e => {
     P[id.slice(2)] = +e.target.value; if (P.a0 > P.a1) [P.a0, P.a1] = [P.a1, P.a0]; desenharPerfil(); }));
   desenharPerfil();

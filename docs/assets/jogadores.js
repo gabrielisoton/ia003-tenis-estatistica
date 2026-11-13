@@ -125,6 +125,89 @@ function perfil(J, nome, anos, sups, minRef = 100, minRec = 20) {
            anos: [anual[0].ano, anual[anual.length - 1].ano] };
 }
 
+/* líderes de todos os critérios — idêntico a analises.lideres:
+   pódio (3 primeiros, vantagem do 1º, liderança isolada × empate técnico pelo IC de Wilson) e
+   quadro de medalhas ordenado por pontos (1º = 3, 2º = 2, 3º = 1; desempate por ouros, pratas, top N) */
+const MEDALHAS = ["ouro", "prata", "bronze"];
+function lideres(tab, CR, top = 10) {
+  const podio = [], conta = new Map();
+  for (const c of CR) {
+    let rk = rankear(tab.map(r => ({ ...r })), c);
+    if (c.tipo === "n") rk = rk.filter(r => r[c.chave] > 0);
+    if (!rk.length) continue;
+    const p = { c, n: rk.length };
+    MEDALHAS.forEach((m, k) => { if (rk[k]) { p[m] = rk[k].nome; p[m + "_valor"] = rk[k][c.chave]; } });
+    if (rk.length > 1) {
+      const a = rk[0], b = rk[1];
+      p.vantagem = c.maior_melhor ? a[c.chave] - b[c.chave] : b[c.chave] - a[c.chave];
+      if (c.tipo === "%") {
+        const iso = c.maior_melhor ? a[c.chave + "_ic_inf"] > b[c.chave + "_ic_sup"] : a[c.chave + "_ic_sup"] < b[c.chave + "_ic_inf"];
+        p.lideranca = iso ? "isolada" : "empate técnico";
+      }
+    }
+    podio.push(p);
+    rk.slice(0, top).forEach((r, k) => {
+      if (!conta.has(r.nome)) conta.set(r.nome, { nome: r.nome, ouro: 0, prata: 0, bronze: 0, top: 0, criterios: [], partidas: r.partidas });
+      const d = conta.get(r.nome);
+      if (k < 3) d[MEDALHAS[k]]++;
+      if (k === 0) d.criterios.push(c.nome);
+      d.top++;
+    });
+  }
+  const med = [...conta.values()];
+  med.forEach(d => d.pontos = 3 * d.ouro + 2 * d.prata + d.bronze);
+  med.sort((a, b) => b.pontos - a.pontos || b.ouro - a.ouro || b.prata - a.prata || b.top - a.top);
+  return { podio, med };
+}
+
+/* caixa de busca com lista suspensa (substitui o <datalist>, que só mostra opções que batem com o texto
+   já digitado — com "Roger Federer" preenchido, a lista nunca abria) */
+function combobox(input, opcoes, detalhe, aoEscolher, maxItens = 150) {
+  const sem = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  const chaves = opcoes.map(sem);
+  const caixa = document.createElement("div");
+  caixa.className = "combo";
+  input.parentNode.insertBefore(caixa, input);
+  caixa.append(input);
+  const seta = document.createElement("button");
+  seta.type = "button"; seta.className = "combo-seta"; seta.setAttribute("aria-label", "Abrir lista"); seta.textContent = "▾";
+  const lista = document.createElement("ul");
+  lista.className = "combo-lista"; lista.setAttribute("role", "listbox"); lista.hidden = true;
+  caixa.append(seta, lista);
+  input.setAttribute("role", "combobox"); input.setAttribute("autocomplete", "off"); input.setAttribute("aria-expanded", "false");
+  let atual = input.value, itens = [], foco = -1;
+
+  const abrir = (filtrar = true) => {
+    const q = filtrar ? sem(input.value.trim()) : "";
+    itens = [];
+    for (let i = 0; i < opcoes.length && itens.length < maxItens; i++) if (!q || chaves[i].includes(q)) itens.push(i);
+    lista.innerHTML = itens.length
+      ? itens.map((i, k) => `<li role="option" data-k="${k}" class="${opcoes[i] === atual ? "sel" : ""}">${opcoes[i]}<small>${detalhe(i)}</small></li>`).join("")
+        + (itens.length === maxItens ? `<li class="vazio">Digite para refinar a busca…</li>` : "")
+      : `<li class="vazio">Nenhum jogador com "${input.value}"</li>`;
+    foco = Math.max(0, itens.findIndex(i => opcoes[i] === atual));
+    lista.hidden = false; input.setAttribute("aria-expanded", "true"); marcar();
+  };
+  const fechar = () => { lista.hidden = true; input.setAttribute("aria-expanded", "false"); };
+  const marcar = () => lista.querySelectorAll("li[data-k]").forEach(li => {
+    const on = +li.dataset.k === foco; li.classList.toggle("foco", on); if (on) li.scrollIntoView({ block: "nearest" }); });
+  const escolher = k => { if (itens[k] === undefined) return; atual = opcoes[itens[k]]; input.value = atual; fechar(); aoEscolher(atual); };
+
+  input.addEventListener("focus", () => { input.select(); abrir(false); });
+  input.addEventListener("click", () => { if (lista.hidden) abrir(false); });
+  input.addEventListener("input", () => abrir(true));
+  input.addEventListener("keydown", e => {
+    if (e.key === "ArrowDown") { e.preventDefault(); if (lista.hidden) abrir(false); else { foco = Math.min(foco + 1, itens.length - 1); marcar(); } }
+    else if (e.key === "ArrowUp") { e.preventDefault(); foco = Math.max(foco - 1, 0); marcar(); }
+    else if (e.key === "Enter") { e.preventDefault(); if (!lista.hidden) escolher(foco); }
+    else if (e.key === "Escape") { input.value = atual; fechar(); input.blur(); }
+  });
+  input.addEventListener("blur", () => setTimeout(() => { if (!caixa.contains(document.activeElement)) { input.value = atual; fechar(); } }, 150));
+  seta.addEventListener("mousedown", e => { e.preventDefault(); if (!lista.hidden) fechar(); else if (document.activeElement === input) abrir(false); else input.focus(); });
+  lista.addEventListener("mousedown", e => { e.preventDefault(); const li = e.target.closest("li[data-k]"); if (li) escolher(+li.dataset.k); });
+  return { definir: v => { atual = v; input.value = v; } };
+}
+
 /* compara com os valores calculados no Python */
 function conferir(J) {
   const tudo = new Set([0, 1, 2, 3]), niv = new Set([0, 1, 2, 3, 4]);

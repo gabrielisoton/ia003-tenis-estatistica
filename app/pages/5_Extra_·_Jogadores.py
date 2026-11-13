@@ -1,4 +1,4 @@
-"""Extra · Jogadores — ranking por critério e perfil individual de cada jogador (população inteira)."""
+"""Extra · Jogadores — líderes de todos os critérios, ranking por critério e perfil individual (população inteira)."""
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
@@ -72,7 +72,106 @@ def eixo(fig: go.Figure, c: an.Criterio, eixo_x: bool = True) -> None:
 
 
 ROTULO_CRIT = {c.chave: f"{c.grupo} · {c.nome}" for c in an.CRITERIOS}
-aba_rank, aba_perfil = st.tabs(["🏅 Ranking por critério", "🎾 Perfil do jogador"])
+CORES_MED = {"ouro": "#c98500", "prata": "#a8a6a0", "bronze": "#8c5a3c"}
+ICONE_MED = {"ouro": "🥇", "prata": "🥈", "bronze": "🥉"}
+TOP_MED = 10
+
+
+@st.cache_data
+def lideres(anos, superficies, niveis, minimo):
+    tab, _ = tabela(anos, superficies, niveis, minimo)
+    return an.lideres(tab, TOP_MED) if len(tab) else (pd.DataFrame(), pd.DataFrame())
+
+
+aba_lid, aba_rank, aba_perfil = st.tabs(["🏆 Líderes de cada critério", "🏅 Ranking por critério",
+                                         "🎾 Perfil do jogador"])
+
+# =================================================================== líderes
+with aba_lid:
+    c1, c2 = st.columns([3, 1])
+    anos_l = c1.slider("Anos", A0, A1, (A0, A1), key="ld_anos")
+    min_l = c2.number_input("Mínimo de partidas", 1, 1000, 100, step=10, key="ld_min",
+                            help="Só disputa a liderança quem jogou pelo menos isso no recorte escolhido.")
+    c3, c4 = st.columns(2)
+    sups_l = c3.multiselect("Superfície", an.SUPERFICIES, default=an.SUPERFICIES, key="ld_sup")
+    nivs_l = c4.multiselect("Nível do torneio", an.NIVEIS, default=an.NIVEIS, key="ld_niv")
+    pod, med = lideres(anos_l, tuple(sups_l), tuple(nivs_l), int(min_l))
+    if not sups_l or not nivs_l or pod.empty:
+        st.warning("Nenhum jogador com esses filtros. Tente reduzir o mínimo de partidas ou ampliar o recorte.")
+    else:
+        dono = med.index[0]
+        isoladas = pod.get("lideranca", pd.Series(dtype=object))
+        m = st.columns([1.8, 1, 1, 1])
+        d = med.iloc[0]
+        m[0].metric("Mais dominante", dono, help="Quem soma mais pontos no quadro de medalhas "
+                                                 "(1º lugar = 3, 2º = 2, 3º = 1).")
+        m[1].metric("Pontos", br(d["pontos"], 0),
+                    help=f"{int(d['ouro'])} 🥇 · {int(d['prata'])} 🥈 · {int(d['bronze'])} 🥉 em {len(pod)} critérios")
+        m[2].metric(f"Vezes no top {TOP_MED}", br(med.iloc[0][f"top{TOP_MED}"], 0), help=f"em {len(pod)} critérios")
+        m[3].metric("Lideranças isoladas", f"{int((isoladas == 'isolada').sum())} de {int(isoladas.notna().sum())}",
+                    help="Proporções em que o IC 95% do 1º não toca o do 2º: a vantagem não é só sorte.")
+
+        # ---------------- pódio de todos os critérios
+        st.subheader("Pódio de cada critério")
+        def celula(r, medalha):
+            if pd.isna(r.get(medalha)):
+                return "—"
+            return f"{r[medalha]} ({fmt(an.CRIT[r['chave']], r[f'{medalha}_valor'])})"
+        def vantagem(r):
+            c = an.CRIT[r["chave"]]
+            v = r.get("vantagem")
+            if pd.isna(v):
+                return "—"
+            if c.tipo == "%":
+                return f"+{br(100 * v, 1)} p.p."
+            return "+" + (br(v, 3) if c.tipo == "taxa" else br(v, 2) if c.tipo == "razao" else br(v, 0))
+        tp = pd.DataFrame({
+            "Grupo": pod["grupo"], "Critério": pod["criterio"],
+            "🥇 1º": [celula(r, "ouro") for _, r in pod.iterrows()],
+            "🥈 2º": [celula(r, "prata") for _, r in pod.iterrows()],
+            "🥉 3º": [celula(r, "bronze") for _, r in pod.iterrows()],
+            "Vantagem do 1º": [vantagem(r) for _, r in pod.iterrows()],
+            "Liderança": pod["lideranca"].fillna("—") if "lideranca" in pod else "—",
+        })
+        st.dataframe(tp, hide_index=True, width="stretch", height=38 + 35 * len(tp))
+        g.como_ler(
+            "Cada linha é um critério, com os **três melhores** jogadores do recorte (entre os que têm o mínimo de "
+            "partidas) e o valor de cada um. Em duplas faltas por game, o melhor é quem comete **menos**.\n\n"
+            "**Vantagem do 1º** é a distância para o 2º colocado (em pontos percentuais nas proporções).\n\n"
+            "**Liderança isolada × empate técnico:** nas proporções, comparamos os **IC 95% de Wilson** do 1º e do "
+            "2º. Se os intervalos **não se tocam**, a liderança é *isolada*: dificilmente é fruto do acaso das "
+            "partidas que cada um jogou. Se eles se sobrepõem, é um *empate técnico*: com esses dados não dá para "
+            "afirmar quem é melhor. É um critério conservador (intervalos que se tocam um pouco ainda podem indicar "
+            "diferença num teste formal), mas mostra a ideia de variabilidade amostral do Painel 3.")
+
+        # ---------------- quadro de medalhas
+        st.subheader("Quadro de medalhas · quem domina mais critérios")
+        topm = med.head(15).iloc[::-1]
+        fig = go.Figure()
+        for medalha in an.MEDALHAS:
+            fig.add_bar(y=topm.index, x=topm[medalha], orientation="h", name=f"{ICONE_MED[medalha]} {medalha}",
+                        marker_color=CORES_MED[medalha],
+                        text=[int(v) if v else "" for v in topm[medalha]], textposition="inside",
+                        hovertemplate="<b>%{y}</b><br>%{x} " + medalha + "<extra></extra>")
+        fig.update_layout(barmode="stack", legend_traceorder="normal")
+        fig.update_xaxes(title="critérios (1º, 2º e 3º lugares)", dtick=1, showgrid=True,
+                         gridcolor="rgba(137,135,129,0.25)")
+        fig.update_yaxes(showgrid=False)
+        st.plotly_chart(g._layout(fig, "Medalhas por jogador (15 com mais pontos)", 560),
+                        width="stretch")
+        tm = pd.DataFrame({
+            "Jogador": med.index, "Pontos": med["pontos"], "🥇": med["ouro"], "🥈": med["prata"], "🥉": med["bronze"],
+            f"Top {TOP_MED}": med[f"top{TOP_MED}"], "Partidas": med["partidas"],
+            "Lidera em": ["; ".join(x) for x in med["criterios"]],
+        })
+        st.dataframe(tm, hide_index=True, width="stretch", height=420,
+                     column_config={"Lidera em": st.column_config.TextColumn(width="large")})
+        st.caption(f"**Pontos:** 1º lugar vale 3, 2º vale 2 e 3º vale 1; empates se desfazem por mais 1º lugares. "
+                   "Assim, quem é forte em muitos critérios passa à frente de um especialista imbatível em poucos "
+                   "(na base inteira, Karlović lidera 4 critérios, todos de saque). A coluna **Top "
+                   f"{TOP_MED}** conta em quantos dos {len(pod)} critérios o jogador fica entre os {TOP_MED} melhores: "
+                   "é a medida de quem é bom em **tudo**, não só excepcional em poucos aspectos. Nas contagens "
+                   "(títulos, finais), quem tem zero não recebe medalha.")
 
 # =================================================================== ranking
 with aba_rank:

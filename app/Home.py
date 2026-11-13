@@ -120,7 +120,7 @@ Estas páginas vão além do que o trabalho pede. Usam a **população inteira**
 da avaliação**. No menu lateral elas têm o prefixo **Extra ·**.
 - **Extra · Explorar:** o que separa o Top N dos demais, a chance de zebra conforme a diferença de ranking e como o
   jogo mudou de 2000 a 2025.
-- **Extra · Jogadores:** ranking dos jogadores em cada aspecto do jogo (saque, devolução, break points, tie-breaks,
+- **Extra · Jogadores:** os líderes de todos os critérios de uma vez (pódio e quadro de medalhas), o ranking dos jogadores em cada aspecto do jogo (saque, devolução, break points, tie-breaks,
   títulos…) com o IC 95% de Wilson, e o perfil individual de cada jogador: percentil em cada critério, desempenho
   por superfície, evolução ano a ano e lista de títulos.
 """)

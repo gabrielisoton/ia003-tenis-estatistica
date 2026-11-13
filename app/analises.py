@@ -256,6 +256,59 @@ def ranking_criterio(tab: pd.DataFrame, chave: str) -> pd.DataFrame:
     return t
 
 
+MEDALHAS = ["ouro", "prata", "bronze"]
+
+
+def lideres(tab: pd.DataFrame, top: int = 10) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Os melhores de cada critério de uma vez.
+
+    Devolve (podio, medalhas):
+    - podio: uma linha por critério com os 3 primeiros, a vantagem do 1º sobre o 2º e, nas proporções,
+      se a liderança é "isolada" (IC 95% de Wilson do 1º não toca o do 2º) ou um "empate técnico";
+    - medalhas: quadro por jogador (ouros, pratas, bronzes e quantas vezes aparece no top `top`),
+      ordenado por pontos (ouro 3, prata 2, bronze 1; desempate por ouros, pratas e top `top`), para
+      premiar quem é forte em muitos critérios e não só imbatível em poucos. Nas contagens, valor 0
+      não ganha medalha.
+    """
+    linhas, conta = [], {}
+    for c in CRITERIOS:
+        rk = ranking_criterio(tab, c.chave)
+        if c.tipo == "n":
+            rk = rk[rk[c.chave] > 0]
+        if rk.empty:
+            continue
+        r = {"chave": c.chave, "grupo": c.grupo, "criterio": c.nome, "tipo": c.tipo, "n_jogadores": len(rk)}
+        for k, med in enumerate(MEDALHAS):
+            if k < len(rk):
+                r[med] = rk.index[k]
+                r[f"{med}_valor"] = rk.iloc[k][c.chave]
+        if len(rk) > 1:
+            v1, v2 = rk.iloc[0][c.chave], rk.iloc[1][c.chave]
+            r["vantagem"] = v1 - v2 if c.maior_melhor else v2 - v1
+            if c.tipo == "%":
+                a, b = rk.iloc[0], rk.iloc[1]
+                isolado = (a[f"{c.chave}_ic_inf"] > b[f"{c.chave}_ic_sup"] if c.maior_melhor
+                           else a[f"{c.chave}_ic_sup"] < b[f"{c.chave}_ic_inf"])
+                r["lideranca"] = "isolada" if isolado else "empate técnico"
+        linhas.append(r)
+        for k, nome in enumerate(rk.index[:top]):
+            d = conta.setdefault(nome, {"ouro": 0, "prata": 0, "bronze": 0, f"top{top}": 0, "criterios": []})
+            if k < 3:
+                d[MEDALHAS[k]] += 1
+            if k == 0:
+                d["criterios"].append(c.nome)
+            d[f"top{top}"] += 1
+    podio = pd.DataFrame(linhas)
+    med = pd.DataFrame.from_dict(conta, orient="index")
+    if med.empty:
+        return podio, med
+    med["partidas"] = tab["partidas"].reindex(med.index)
+    med["pontos"] = 3 * med["ouro"] + 2 * med["prata"] + med["bronze"]
+    med = med.sort_values(["pontos", "ouro", "prata", f"top{top}"], ascending=False)
+    med.index.name = "jogador"
+    return podio, med
+
+
 def perfil_jogador(lg: pd.DataFrame, pop: pd.DataFrame, nome: str, anos=None, superficies=None,
                    min_ref: int = 100, min_recorte: int = 20, confianca: float = 0.95) -> dict:
     """Tudo sobre um jogador no recorte (anos × superfícies).
