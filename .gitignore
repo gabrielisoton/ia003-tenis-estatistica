@@ -1,9 +1,12 @@
 __pycache__/
 *.pyc
 .venv/
-# CSVs brutos: baixados de novo por scripts/00_baixar_dados.py
-dados/raw/
+# CSVs brutos: baixados de novo por nucleo/scripts/00_baixar_dados.py
+nucleo/base/raw/
 
 # material pessoal de estudo (fica só no computador)
 ENUNCIADO_E_CHECKLIST.md
 video/
+
+# site montado (ferramentas/montar_site.py)
+_site/

@@ -1,59 +1,48 @@
-# 🎾 Quem vence no tênis? Inferência estatística no circuito ATP (2000–2025)
+# 🎾 Tênis ATP 2000–2025 · projeto e disciplinas
 
-Atividade avaliativa final da disciplina **IA003 — Probabilidade e Estatística para IA** (Especialização em IA, UFRGS).
+Um repositório, duas frentes que compartilham a mesma base de dados:
 
-O projeto compara **toda a população** de partidas do circuito principal da ATP (N = 66.819) com uma **amostra aleatória simples** de n = 382 partidas. Os parâmetros populacionais são calculados diretamente; os intervalos de confiança e os testes de hipóteses usam **somente a amostra**.
-
-## Links de entrega
-**Site (HTML, GitHub Pages)**
-- Base e amostragem: https://gabrielisoton.github.io/ia003-tenis-estatistica/
-- Painel 1 · População: https://gabrielisoton.github.io/ia003-tenis-estatistica/populacao.html
-- Painel 2 · Amostra: https://gabrielisoton.github.io/ia003-tenis-estatistica/amostra.html
-- Painel 3 · Inferência: https://gabrielisoton.github.io/ia003-tenis-estatistica/inferencia.html
-
-**Extras (fora da avaliação):** [Explorar](https://gabrielisoton.github.io/ia003-tenis-estatistica/explorar.html) (Top N × demais, ranking × zebras, linha do tempo) e [Jogadores](https://gabrielisoton.github.io/ia003-tenis-estatistica/jogadores.html) (líderes de todos os critérios com quadro de medalhas, ranking por critério e perfil de cada jogador).
-
-**App (Streamlit Community Cloud):** https://ia003-tenis-estatistica.streamlit.app. Os painéis 1–3 ficam no menu lateral, e as páginas "Extra" (Explorar e Jogadores) estão fora da avaliação.
-
-- **Vídeo (YouTube):** _a preencher_
-- **Base original:** [TML-Database (Tennismylife)](https://github.com/Tennismylife/TML-Database). O esquema de colunas é o mesmo da base *tennis_atp* de Jeff Sackmann (Tennis Abstract), que foi removida do GitHub em 2026.
-
-## Painéis
-| Página | Conteúdo |
-|---|---|
-| Home | Base, população, unidade amostral, variáveis, cálculo do tamanho amostral e sorteio |
-| Painel 1 · População | KPIs, distribuições, frequências e medidas descritivas (com filtros) |
-| Painel 2 · Amostra | A mesma análise só com a amostra, com sobreposição e tabelas população × amostra |
-| Painel 3 · Inferência | 2 hipóteses de proporção e 2 de média: IC, estatística, valor-p, condições, comparação com o parâmetro real, poder do teste, simulação de 100 ICs, bônus de Welch e limitações |
-
-## Hipóteses (α = 5%, IC 95%)
-| | Pergunta | H₀ | Teste |
-|---|---|---|---|
-| P1 | O jogador de melhor ranking vence mais da metade das partidas? | p = 0,5 (H₁: p > 0,5) | z para uma proporção |
-| P2 | Uma em cada três partidas vai ao set decisivo? | p = 1/3 (H₁: p ≠ 1/3) | z para uma proporção |
-| M1 | Uma partida melhor de 3 dura, em média, 100 minutos? | μ = 100 (H₁: μ ≠ 100) | t para uma média |
-| M2 | Uma partida tem, em média, 10 aces? | μ = 10 (H₁: μ ≠ 10) | t para uma média |
-
-## Como reproduzir
-```bash
-pip install -r requirements.txt
-python scripts/00_baixar_dados.py          # baixa os CSVs 2000–2025 da TML
-python scripts/01_preparar_populacao.py    # gera dados/populacao.parquet
-python scripts/02_tamanho_amostral.py      # n = 382
-python scripts/03_sortear_amostra.py       # AAS com semente 15112026
-python scripts/04_validar_estatistica.py   # confere as fórmulas contra o scipy
-streamlit run app/Home.py
-```
+| | O que é | Links |
+|---|---|---|
+| [**Tênis em números**](projeto/) | Projeto público de analytics: o circuito, a elite × o resto, zebras e o perfil de cada jogador | [site](https://gabrielisoton.github.io/ia003-tenis-estatistica/projeto/) |
+| [**IA003 · Probabilidade e Estatística para IA**](disciplinas/ia003-probabilidade-estatistica/) | Trabalho final da disciplina (UFRGS): população × amostra aleatória simples, IC e testes de hipóteses | [site](https://gabrielisoton.github.io/ia003-tenis-estatistica/) · [app](https://ia003-tenis-estatistica.streamlit.app) |
 
 ## Estrutura
 ```
-app/                 aplicativo Streamlit (Home + pages/)
-  estatistica.py     IC e testes escritos com a fórmula explícita
-  graficos.py        painel descritivo compartilhado pelos Painéis 1 e 2
-dados/               população processada (parquet) e resumo
-amostra/             amostra sorteada, cálculo de n e procedimento do sorteio
-scripts/             pipeline reprodutível 00 → 05 (05 exporta os resultados em JSON para o site)
-docs/                site HTML estático (GitHub Pages), que lê docs/data/*.json
+nucleo/                         compartilhado por tudo (pacote Python `nucleo`)
+  dados.py estatistica.py graficos.py analises.py secoes.py recarga.py exportacao.py enderecos.py
+  base/                         população processada (parquet) e resumo; raw/ fica fora do git
+  scripts/                      00 baixar dados · 01 preparar população · validar_estatistica
+  web/                          estilo e JS comuns dos sites (copiados por ferramentas/montar_site.py)
+projeto/                        "Tênis em números": app/, site/, scripts/
+disciplinas/
+  ia003-probabilidade-estatistica/   trabalho da IA003: app/, site/, amostra/, scripts/
+ferramentas/montar_site.py      junta os sites em _site/ (preview local e GitHub Pages via Actions)
+app/Home.py                     atalho temporário: mantém o link entregue do app da IA003 (ver abaixo)
 ```
 
-Dados: TML-Database (Tennismylife), uso educacional, com citação da fonte.
+## Como rodar
+```bash
+pip install -r requirements.txt
+python nucleo/scripts/00_baixar_dados.py && python nucleo/scripts/01_preparar_populacao.py
+python nucleo/scripts/validar_estatistica.py
+streamlit run projeto/app/main.py                                     # app do projeto
+streamlit run disciplinas/ia003-probabilidade-estatistica/app/main.py  # app da IA003
+python ferramentas/montar_site.py && python -m http.server 8600 -d _site
+```
+
+## Adicionar uma nova disciplina
+1. Criar `disciplinas/<código>-<nome>/` com `README.md`, e o que a disciplina pedir: `app/main.py` (copie o início do `main.py` da IA003: ele põe a raiz no `sys.path` e chama `nucleo.recarga.preparar()`), `notebooks/`, `scripts/`, `site/`.
+2. Usar o que já existe em `nucleo/` (`dados.populacao()`, `analises.longo()`, `estatistica`, `graficos`) em vez de copiar.
+3. Para publicar um site da disciplina: incluir a pasta em `LAYOUT` de `ferramentas/montar_site.py` e criar um `site/assets/site.js` com a navegação.
+4. O que amadurecer e interessar ao público vai para `projeto/`; o que for útil a mais de um lugar vai para `nucleo/`.
+
+> **Termos da base:** a TML permite uso pessoal, educacional e de pesquisa não comercial, com citação. Uso comercial, inclusive treinar modelos de previsão para serviços comerciais, exige autorização ([termos](https://stats.tennismylife.org/tennis-match-database#usage-terms)).
+
+## Depois da nota da IA003 (pendente)
+1. Renomear o repositório para `tenis-atp`.
+2. Em `ferramentas/montar_site.py`, inverter o `LAYOUT` (projeto na raiz, IA003 em `disciplinas/ia003/`) e ajustar `nucleo/enderecos.py` e os `site.js`.
+3. Criar um repositório-ponte `ia003-tenis-estatistica` com redirecionamentos para os endereços novos.
+4. Reimplantar o app da IA003 no Streamlit Cloud com `disciplinas/ia003-probabilidade-estatistica/app/main.py` e apagar `app/Home.py`.
+
+Dados: [TML-Database (Tennismylife)](https://github.com/Tennismylife/TML-Database), ATP 2000–2025, uso educacional com citação da fonte.
