@@ -1,4 +1,4 @@
-/* 3º set — inferência. Os resultados vêm prontos de docs/data/inferencia.json (calculados e validados no
+/* 3º set — inferência. Os resultados vêm prontos de data/inferencia.json (calculados e validados no
    Python). Só a simulação didática de 100 ICs roda aqui, sorteando da população no navegador. */
 
 const SINAL = { bilateral: "≠", maior: ">", menor: "<" };

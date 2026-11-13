@@ -10,3 +10,6 @@ video/
 
 # site montado (ferramentas/montar_site.py)
 _site/
+
+# configuração local do Claude Code (launch.json)
+.claude/

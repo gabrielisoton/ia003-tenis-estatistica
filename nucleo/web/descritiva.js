@@ -1,5 +1,5 @@
 /* Painel descritivo compartilhado pelo 1º set (população) e 2º set (amostra).
-   Os dados chegam em colunas compactas (docs/data/populacao.json e amostra.json) e os
+   Os dados chegam em colunas compactas (data/populacao.json e, na disciplina, amostra.json) e os
    filtros são aplicados no navegador. As medidas seguem as mesmas definições do pandas. */
 
 const QUALI = {
