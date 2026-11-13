@@ -10,7 +10,7 @@
 <script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>
 <script src="assets/comum.js?v=2"></script>
 <script src="assets/descritiva.js?v=2"></script>
-<script src="assets/jogadores.js?v=3"></script>
+<script src="assets/jogadores.js?v=4"></script>
 <style>
   .barra-pct { position: relative; height: 10px; background: #ecebe5; border-radius: 6px; min-width: 90px; }
   .barra-pct i { position: absolute; inset: 0 auto 0 0; border-radius: 6px; }
@@ -51,7 +51,8 @@
   <section class="painel-aba" data-p="lid">
     <div class="filtros" style="position:static">
       <div class="grupo"><span class="rot">Anos</span><select class="sel" id="l-a0"></select>–<select class="sel" id="l-a1"></select></div>
-      <div class="grupo"><span class="rot">Mínimo de partidas</span><input class="sel" id="l-min" type="number" value="100" min="1" step="10" style="width:90px"></div>
+      <div class="grupo"><span class="rot">Mínimo de partidas</span><input class="sel" id="l-min" type="number" value="100" min="1" step="10" style="width:90px"
+        title="Ajusta sozinho quando você muda os anos (10 por temporada, entre 20 e 100), mas pode ser editado."></div>
       <div class="grupo"><span class="rot">Superfície</span><span id="l-sup"></span></div>
       <div class="grupo"><span class="rot">Nível</span><span id="l-niv"></span></div>
     </div>
@@ -69,7 +70,8 @@
     <div class="filtros" style="position:static">
       <div class="grupo"><span class="rot">Critério</span><select class="sel" id="r-crit"></select></div>
       <div class="grupo"><span class="rot">Anos</span><select class="sel" id="r-a0"></select>–<select class="sel" id="r-a1"></select></div>
-      <div class="grupo"><span class="rot">Mínimo de partidas</span><input class="sel" id="r-min" type="number" value="100" min="1" step="10" style="width:90px"></div>
+      <div class="grupo"><span class="rot">Mínimo de partidas</span><input class="sel" id="r-min" type="number" value="100" min="1" step="10" style="width:90px"
+        title="Ajusta sozinho quando você muda os anos (10 por temporada, entre 20 e 100), mas pode ser editado."></div>
       <div class="grupo"><span class="rot">Superfície</span><span id="r-sup"></span></div>
       <div class="grupo"><span class="rot">Nível</span><span id="r-niv"></span></div>
     </div>
@@ -109,6 +111,13 @@ ligarAbas(document.getElementById("area"), "#abas-j");
       const v = +b.dataset.v; if (set.has(v)) { if (set.size > 1) set.delete(v); } else set.add(v);
       b.classList.toggle("on", set.has(v)); aoMudar(); }));
   };
+  // anos: a ponta que você mudou manda — se passar da outra, a outra acompanha (escolher o mesmo ano nas duas
+  // pontas mostra uma temporada só); o mínimo de partidas acompanha o tamanho do recorte
+  const mudarAnos = (E, pre, mudou, comMinimo = true) => {
+    if (E.a0 > E.a1) { if (mudou === "a0") E.a1 = E.a0; else E.a0 = E.a1; }
+    document.getElementById(pre + "-a0").value = E.a0; document.getElementById(pre + "-a1").value = E.a1;
+    if (comMinimo) document.getElementById(pre + "-min").value = minimoSugerido(E.a0, E.a1);
+  };
   const titulo = t => ({ text: t, x: 0, font: { size: 16, family: "Barlow Condensed" } });
   const eixoC = c => ({ tickformat: c.tipo === "%" ? ".0%" : null });
 
@@ -134,7 +143,7 @@ ligarAbas(document.getElementById("area"), "#abas-j");
     const { podio, med } = lideres(tab, CR, TOPN);
     const vazio = !podio.length;
     document.querySelectorAll("#l-podio, #l-med").forEach(t => t.innerHTML = "");
-    if (vazio) { document.getElementById("l-placar").innerHTML = `<div class="aviso">Nenhum jogador com esses filtros. Reduza o mínimo de partidas ou amplie o recorte.</div>`;
+    if (vazio) { document.getElementById("l-placar").innerHTML = avisoVazio(minimo, maxPartidas(J, [LD.a0, LD.a1], LD.sup, LD.niv));
       Plotly.purge("l-g"); document.getElementById("l-nota").innerHTML = ""; return; }
     const d = med[0], comIC = podio.filter(p => p.lideranca);
     placar(document.getElementById("l-placar"), [
@@ -170,7 +179,7 @@ ligarAbas(document.getElementById("area"), "#abas-j");
   chips(document.getElementById("l-niv"), NIVS, LD.niv, null, desenharLideres);
   document.getElementById("l-min").addEventListener("change", desenharLideres);
   ["l-a0", "l-a1"].forEach(id => document.getElementById(id).addEventListener("change", e => {
-    LD[id.slice(2)] = +e.target.value; if (LD.a0 > LD.a1) [LD.a0, LD.a1] = [LD.a1, LD.a0]; desenharLideres(); }));
+    LD[id.slice(2)] = +e.target.value; mudarAnos(LD, "l", id.slice(2)); desenharLideres(); }));
   desenharLideres();
 
   /* ================= ranking ================= */
@@ -192,7 +201,7 @@ ligarAbas(document.getElementById("area"), "#abas-j");
     const c = CRIT[rc.value], minimo = Math.max(1, +document.getElementById("r-min").value || 1);
     const { tab, medias } = tabelaJogadores(J, [R.a0, R.a1], R.sup, R.niv, minimo);
     const rk = rankear(tab, c);
-    if (!rk.length) { document.getElementById("r-placar").innerHTML = `<div class="aviso">Nenhum jogador com esses filtros. Reduza o mínimo de partidas ou amplie o recorte.</div>`;
+    if (!rk.length) { document.getElementById("r-placar").innerHTML = avisoVazio(minimo, maxPartidas(J, [R.a0, R.a1], R.sup, R.niv));
       Plotly.purge("r-g"); document.getElementById("r-t").innerHTML = ""; return; }
     const media = medias[c.chave];
     placar(document.getElementById("r-placar"), [
@@ -230,7 +239,7 @@ ligarAbas(document.getElementById("area"), "#abas-j");
   chips(document.getElementById("r-niv"), NIVS, R.niv, null, desenharRanking);
   ["r-crit", "r-min"].forEach(id => document.getElementById(id).addEventListener("change", desenharRanking));
   ["r-a0", "r-a1"].forEach(id => document.getElementById(id).addEventListener("change", e => {
-    R[id.slice(2)] = +e.target.value; if (R.a0 > R.a1) [R.a0, R.a1] = [R.a1, R.a0]; desenharRanking(); }));
+    R[id.slice(2)] = +e.target.value; mudarAnos(R, "r", id.slice(2)); desenharRanking(); }));
   desenharRanking();
 
   /* ================= perfil ================= */
@@ -345,7 +354,7 @@ ligarAbas(document.getElementById("area"), "#abas-j");
   chips(document.getElementById("p-sup"), SUPS, P.sup, CORES.sup, desenharPerfil);
   combobox(document.getElementById("p-nome"), J.nomes, i => `${br(car.get(i), 0)} partidas`, desenharPerfil);
   ["p-a0", "p-a1"].forEach(id => document.getElementById(id).addEventListener("change", e => {
-    P[id.slice(2)] = +e.target.value; if (P.a0 > P.a1) [P.a0, P.a1] = [P.a1, P.a0]; desenharPerfil(); }));
+    P[id.slice(2)] = +e.target.value; mudarAnos(P, "p", id.slice(2), false); desenharPerfil(); }));
   desenharPerfil();
 })();
 </script>

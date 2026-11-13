@@ -125,6 +125,18 @@ function perfil(J, nome, anos, sups, minRef = 100, minRec = 20) {
            anos: [anual[0].ano, anual[anual.length - 1].ano] };
 }
 
+/* mínimo de partidas sugerido para o recorte — idêntico a minimo_sugerido no Streamlit:
+   10 por temporada, entre 20 e 100 (um ano só → 20; com 100 fixo, uma temporada isolada ficava vazia) */
+const minimoSugerido = (a0, a1) => Math.min(100, Math.max(20, 10 * (a1 - a0 + 1)));
+/* quem mais jogou no recorte (para explicar por que um ranking ficou vazio) */
+function maxPartidas(J, anos, sups, nivs) {
+  const L = J.linhas, f = i => L.ano[i] >= anos[0] && L.ano[i] <= anos[1] && sups.has(L.sup[i]) && nivs.has(L.niv[i]);
+  let mx = 0; for (const s of somar(L, f, i => L.j[i]).values()) mx = Math.max(mx, s.partida);
+  return mx;
+}
+const avisoVazio = (minimo, mx) => `<div class="aviso">${mx ? `Ninguém tem ${minimo} partidas nesse recorte: quem mais jogou
+  fez ${mx}. Reduza o mínimo de partidas ou amplie o recorte.` : "Não há partidas nesse recorte."}</div>`;
+
 /* líderes de todos os critérios — idêntico a analises.lideres:
    pódio (3 primeiros, vantagem do 1º, liderança isolada × empate técnico pelo IC de Wilson) e
    quadro de medalhas ordenado por pontos (1º = 3, 2º = 2, 3º = 1; desempate por ouros, pratas, top N) */

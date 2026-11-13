@@ -51,6 +51,37 @@ def jogadores() -> pd.Series:
     return longo()["jogador"].value_counts()
 
 
+@st.cache_data
+def max_partidas(anos, superficies, niveis) -> int:
+    r = an.recortar(longo(), anos, list(superficies), list(niveis))
+    return int(r["jogador"].value_counts().max()) if len(r) else 0
+
+
+def minimo_sugerido(anos) -> int:
+    """10 partidas por temporada do recorte, entre 20 e 100: uma temporada só → 20; 10 anos ou mais → 100.
+    Com 100 fixo, um ano isolado ficava vazio (quem mais joga faz ~90 partidas por temporada)."""
+    return int(min(100, max(20, 10 * (anos[1] - anos[0] + 1))))
+
+
+def ajustar_minimo(chave_anos: str, chave_min: str) -> None:
+    st.session_state[chave_min] = minimo_sugerido(st.session_state[chave_anos])
+
+
+def aviso_vazio(anos, sups, nivs, minimo) -> None:
+    if not sups or not nivs:
+        st.warning("Escolha pelo menos uma superfície e um nível de torneio.")
+        return
+    mx = max_partidas(anos, tuple(sups), tuple(nivs))
+    st.warning(f"Ninguém tem {minimo} partidas nesse recorte: quem mais jogou fez {mx}. Reduza o mínimo de "
+               "partidas ou amplie o recorte." if mx else "Não há partidas nesse recorte.")
+
+
+AJUDA_MIN = ("Ajusta sozinho quando você muda os anos (10 por temporada, entre 20 e 100), mas pode ser editado. "
+             "Com poucas partidas o IC fica largo e o 1º lugar pode ser sorte.")
+for _k in ("ld_min", "rk_min"):
+    st.session_state.setdefault(_k, 100)
+
+
 def fmt(c: an.Criterio, v) -> str:
     if v is None or pd.isna(v):
         return "—"
@@ -95,15 +126,16 @@ aba_lid, aba_rank, aba_perfil = st.tabs(["🏆 Líderes de cada critério", "�
 # =================================================================== líderes
 with aba_lid:
     c1, c2 = st.columns([3, 1])
-    anos_l = c1.slider("Anos", A0, A1, (A0, A1), key="ld_anos")
-    min_l = c2.number_input("Mínimo de partidas", 1, 1000, 100, step=10, key="ld_min",
-                            help="Só disputa a liderança quem jogou pelo menos isso no recorte escolhido.")
+    anos_l = c1.slider("Anos", A0, A1, (A0, A1), key="ld_anos", on_change=ajustar_minimo,
+                       args=("ld_anos", "ld_min"), help="Escolha o mesmo ano nas duas pontas para ver uma temporada só.")
+    min_l = c2.number_input("Mínimo de partidas", 1, 1000, step=10, key="ld_min",
+                            help="Só disputa a liderança quem jogou pelo menos isso no recorte. " + AJUDA_MIN)
     c3, c4 = st.columns(2)
     sups_l = c3.multiselect("Superfície", an.SUPERFICIES, default=an.SUPERFICIES, key="ld_sup")
     nivs_l = c4.multiselect("Nível do torneio", an.NIVEIS, default=an.NIVEIS, key="ld_niv")
     pod, med = lideres(anos_l, tuple(sups_l), tuple(nivs_l), int(min_l))
     if not sups_l or not nivs_l or pod.empty:
-        st.warning("Nenhum jogador com esses filtros. Tente reduzir o mínimo de partidas ou ampliar o recorte.")
+        aviso_vazio(anos_l, sups_l, nivs_l, int(min_l))
     else:
         dono = med.index[0]
         isoladas = pod.get("lideranca", pd.Series(dtype=object))
@@ -183,9 +215,10 @@ with aba_lid:
 with aba_rank:
     c1, c2, c3 = st.columns([2, 2, 1])
     chave = c1.selectbox("Critério", [c.chave for c in an.CRITERIOS], format_func=ROTULO_CRIT.get, key="rk_crit")
-    anos = c2.slider("Anos", A0, A1, (A0, A1), key="rk_anos")
-    minimo = c3.number_input("Mínimo de partidas", 1, 1000, 100, step=10, key="rk_min",
-                             help="Só entra no ranking quem jogou pelo menos isso no recorte escolhido.")
+    anos = c2.slider("Anos", A0, A1, (A0, A1), key="rk_anos", on_change=ajustar_minimo,
+                     args=("rk_anos", "rk_min"), help="Escolha o mesmo ano nas duas pontas para ver uma temporada só.")
+    minimo = c3.number_input("Mínimo de partidas", 1, 1000, step=10, key="rk_min",
+                             help="Só entra no ranking quem jogou pelo menos isso no recorte. " + AJUDA_MIN)
     c4, c5 = st.columns(2)
     sups = c4.multiselect("Superfície", an.SUPERFICIES, default=an.SUPERFICIES, key="rk_sup")
     nivs = c5.multiselect("Nível do torneio", an.NIVEIS, default=an.NIVEIS, key="rk_niv")
@@ -194,7 +227,7 @@ with aba_rank:
     tab, medias = tabela(anos, tuple(sups), tuple(nivs), int(minimo))
     rk = an.ranking_criterio(tab, chave) if len(tab) else tab
     if not sups or not nivs or rk.empty:
-        st.warning("Nenhum jogador com esses filtros. Tente reduzir o mínimo de partidas ou ampliar o recorte.")
+        aviso_vazio(anos, sups, nivs, int(minimo))
     else:
         media = medias[chave]
         m = st.columns([1, 1.8, 1, 1])
