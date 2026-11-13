@@ -123,6 +123,10 @@ function montarFiltros(el, meta, f, aoMudar) {
 }
 
 /* ---------------- gráficos ---------------- */
+// título preso ao topo do gráfico: a legenda e os rótulos de média/mediana ficam logo acima da área do gráfico, sem
+// encostar no subtítulo (o título centralizado na margem invadia a legenda quando havia população × amostra)
+const tituloNoTopo = text => ({ text, x: 0, xref: "container", y: 1, yref: "container", yanchor: "top", pad: { t: 10, l: 4 },
+  font: { size: 16, family: "Barlow Condensed" } });
 function grafBarras(el, titulo, series, col) {
   const unica = series.length === 1;
   const traces = series.map(s => ({
@@ -132,9 +136,9 @@ function grafBarras(el, titulo, series, col) {
     customdata: s.freq.map(c => c.n),
     hovertemplate: `<b>%{x}</b><br>%{y:.1%} ${T("das partidas", "of matches")} (n = %{customdata:,})<extra>${s.nome}</extra>`,
   }));
-  plot(el, traces, { title: { text: titulo, x: 0, font: { size: 16, family: "Barlow Condensed" } }, height: 340,
+  plot(el, traces, { title: tituloNoTopo(titulo), height: unica ? 340 : 360,
     showlegend: !unica, yaxis: { tickformat: ".0%", title: T("% das partidas", "% of matches"), gridcolor: "rgba(137,135,129,.22)" },
-    margin: { l: 56, r: 10, t: 64, b: 46 } });
+    margin: { l: 56, r: 10, t: unica ? 64 : 84, b: 46 } });
 }
 function grafHist(el, col, series, base) {
   const q = QUANT[col], w = q.largura;
@@ -155,11 +159,11 @@ function grafHist(el, col, series, base) {
       ann.push({ x: s.r.mediana, y: 1, yref: "paper", xanchor: "right", yanchor: "bottom", text: `${T("mediana", "median")} ${br(s.r.mediana, 1)} `, showarrow: false });
     }
   });
-  plot(el, traces, { barmode: "overlay", bargap: .08, height: 380, shapes, annotations: ann, showlegend: !unica,
-    title: { text: T(`Distribuição — ${q.nome}<br><sup>linha contínua = média · pontilhada = mediana · os 0,5% maiores valores ficam fora do gráfico (aparecem no boxplot)</sup>`,
-      `Distribution — ${q.nome}<br><sup>solid line = mean · dotted = median · the top 0.5% of values are off the chart (they show in the boxplot)</sup>`), x: 0, font: { size: 16, family: "Barlow Condensed" } },
+  plot(el, traces, { barmode: "overlay", bargap: .08, height: 410, shapes, annotations: ann, showlegend: !unica,
+    title: tituloNoTopo(T(`Distribuição — ${q.nome}<br><sup>linha contínua = média · pontilhada = mediana · os 0,5% maiores valores ficam fora do gráfico (aparecem no boxplot)</sup>`,
+      `Distribution — ${q.nome}<br><sup>solid line = mean · dotted = median · the top 0.5% of values are off the chart (they show in the boxplot)</sup>`)),
     xaxis: { title: q.nome, showgrid: false }, yaxis: { title: T("% das partidas", "% of matches"), gridcolor: "rgba(137,135,129,.22)" },
-    margin: { l: 56, r: 10, t: 78, b: 50 } });
+    margin: { l: 56, r: 10, t: 104, b: 50 } });   // título (2 linhas) + legenda ou rótulos de média/mediana
 }
 function grafBox(el, col, series) {
   const traces = series.map(s => ({ type: "box", x: s.v, name: s.nome, marker: { color: s.cor, size: 3 },

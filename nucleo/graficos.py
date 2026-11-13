@@ -189,7 +189,8 @@ def faixa_ranking(serie: pd.Series) -> pd.Series:
 
 def _layout(fig: go.Figure, titulo: str, altura: int = 320) -> go.Figure:
     fig.update_layout(
-        title=dict(text=titulo, x=0, font=dict(size=15)),
+        # título preso ao topo: a legenda (logo acima do gráfico) não encosta no subtítulo de 2 linhas
+        title=dict(text=titulo, x=0, y=1, yref="container", yanchor="top", pad=dict(t=8), font=dict(size=15)),
         height=altura, margin=dict(l=10, r=10, t=90, b=10),
         legend=dict(orientation="h", y=1.02, yanchor="bottom", x=0, title=None),
         barcornerradius=4, bargap=0.25, bargroupgap=0.06,
@@ -261,13 +262,15 @@ def histograma(df: pd.DataFrame, col: str, rotulo: str, ref: pd.DataFrame | None
             hovertemplate="%{x}: %{y:.1f}% " + T("das partidas", "of matches") + "<extra>" + tr(nome) + "</extra>",
         )
         media, mediana = dado[col].mean(), dado[col].median()
-        sozinho = ref is None
+        # com população × amostra as linhas vão sem rótulo (a legenda diz a cor). Passar annotation_position sem
+        # texto faz o Plotly escrever "new text", por isso a posição só vai junto com o rótulo.
+        rotulos = ref is None
         fig.add_vline(x=media, line_color=CORES.get(nome), line_width=2,
-                      annotation_text=f"{T('média', 'mean')} {br(media, 1)}" if sozinho else None,
-                      annotation_position="top right")
+                      **(dict(annotation_text=f"{T('média', 'mean')} {br(media, 1)}",
+                              annotation_position="top right") if rotulos else {}))
         fig.add_vline(x=mediana, line_color=CORES.get(nome), line_width=2, line_dash="dot",
-                      annotation_text=f"{T('mediana', 'median')} {br(mediana, 1)}" if sozinho else None,
-                      annotation_position="top left")
+                      **(dict(annotation_text=f"{T('mediana', 'median')} {br(mediana, 1)}",
+                              annotation_position="top left") if rotulos else {}))
     fig.update_layout(barmode="overlay", bargap=0.08)
     fig.update_yaxes(title=T("% das partidas", "% of matches"))
     fig.update_xaxes(title=rotulo_quant(col))
