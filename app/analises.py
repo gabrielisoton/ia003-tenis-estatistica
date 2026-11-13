@@ -265,7 +265,8 @@ def lideres(tab: pd.DataFrame, top: int = 10) -> tuple[pd.DataFrame, pd.DataFram
     Devolve (podio, medalhas):
     - podio: uma linha por critério com os 3 primeiros, a vantagem do 1º sobre o 2º e, nas proporções,
       se a liderança é "isolada" (IC 95% de Wilson do 1º não toca o do 2º) ou um "empate técnico";
-    - medalhas: quadro por jogador (ouros, pratas, bronzes e quantas vezes aparece no top `top`),
+    - medalhas: quadro por jogador (ouros, pratas, bronzes e em quantos critérios fica no top `top`,
+      com a lista de critérios de cada um em `<medalha>_criterios` e `top<N>_criterios`),
       ordenado por pontos (ouro 3, prata 2, bronze 1; desempate por ouros, pratas e top `top`), para
       premiar quem é forte em muitos critérios e não só imbatível em poucos. Nas contagens, valor 0
       não ganha medalha.
@@ -292,12 +293,16 @@ def lideres(tab: pd.DataFrame, top: int = 10) -> tuple[pd.DataFrame, pd.DataFram
                 r["lideranca"] = "isolada" if isolado else "empate técnico"
         linhas.append(r)
         for k, nome in enumerate(rk.index[:top]):
-            d = conta.setdefault(nome, {"ouro": 0, "prata": 0, "bronze": 0, f"top{top}": 0, "criterios": []})
+            d = conta.setdefault(nome, {"ouro": 0, "prata": 0, "bronze": 0, f"top{top}": 0, "criterios": [],
+                                        "ouro_criterios": [], "prata_criterios": [], "bronze_criterios": [],
+                                        f"top{top}_criterios": []})
             if k < 3:
                 d[MEDALHAS[k]] += 1
+                d[f"{MEDALHAS[k]}_criterios"].append(c.nome)
             if k == 0:
                 d["criterios"].append(c.nome)
             d[f"top{top}"] += 1
+            d[f"top{top}_criterios"].append(f"{c.nome} ({k + 1}º)")
     podio = pd.DataFrame(linhas)
     med = pd.DataFrame.from_dict(conta, orient="index")
     if med.empty:

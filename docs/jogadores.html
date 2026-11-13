@@ -10,7 +10,7 @@
 <script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>
 <script src="assets/comum.js?v=2"></script>
 <script src="assets/descritiva.js?v=2"></script>
-<script src="assets/jogadores.js?v=4"></script>
+<script src="assets/jogadores.js?v=5"></script>
 <style>
   .barra-pct { position: relative; height: 10px; background: #ecebe5; border-radius: 6px; min-width: 90px; }
   .barra-pct i { position: absolute; inset: 0 auto 0 0; border-radius: 6px; }
@@ -31,6 +31,13 @@
   .combo-lista li.vazio { color: var(--tinta-3); cursor: default; font-style: italic; }
   .medalha { font-size: .92rem; }
   .medalha small { color: var(--tinta-3); margin-left: 4px; }
+  .tem-dica { cursor: help; border-bottom: 1px dotted var(--tinta-3); padding: 0 2px; }
+  .tem-dica:hover, .tem-dica:focus { background: #fbfde9; outline: none; }
+  .zero { color: var(--tinta-3); }
+  #dica-flutuante { position: fixed; z-index: 100; max-width: 320px; background: var(--placar); color: #fff;
+    border-radius: 10px; padding: 9px 12px; font-size: .85rem; line-height: 1.35; box-shadow: 0 8px 24px rgba(0,0,0,.25);
+    pointer-events: none; }
+  #dica-flutuante ul { margin: 4px 0 0; padding-left: 1.1rem; }
   .tag { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: .8rem; font-weight: 600; }
   .tag.iso { background: #e3f6e3; color: #0a6b0a; }
   .tag.emp { background: #f1efe8; color: var(--tinta-2); }
@@ -160,18 +167,26 @@ ligarAbas(document.getElementById("area"), "#abas-j");
     const t15 = med.slice(0, 15).reverse();
     plot(document.getElementById("l-g"), MEDALHAS.map(m => ({ type: "bar", orientation: "h", name: `${ICO[m]} ${m}`,
       y: t15.map(r => r.nome), x: t15.map(r => r[m]), marker: { color: COR_MED[m] },
-      text: t15.map(r => r[m] || ""), textposition: "inside", hovertemplate: `<b>%{y}</b><br>%{x} ${m}<extra></extra>` })),
+      text: t15.map(r => r[m] || ""), textposition: "inside", customdata: t15.map(r => r[m + "_criterios"].join("<br>• ")),
+      hovertemplate: `<b>%{y}</b> · %{x} ${m}<br>• %{customdata}<extra></extra>` })),
       { height: 560, barmode: "stack", legend: { traceorder: "normal", orientation: "h", y: 1.02, yanchor: "bottom", x: 0 },
         title: titulo("Medalhas por jogador (15 com mais pontos)"),
         xaxis: { title: "critérios (1º, 2º e 3º lugares)", dtick: 1, showgrid: true, gridcolor: "rgba(137,135,129,.22)" },
         yaxis: { showgrid: false, automargin: true }, margin: { l: 150, r: 20, t: 90, b: 50 } });
-    document.getElementById("l-med").innerHTML = `<tr><th>Jogador</th><th>Pontos</th><th>🥇</th><th>🥈</th><th>🥉</th><th>Top ${TOPN}</th>
+    const comDica = (n, titulo, lista) => !n ? `<span class="zero">0</span>` :
+      `<span class="tem-dica" tabindex="0" data-dica="<b>${titulo}</b><ul>${lista.map(x => `<li>${x}</li>`).join("")}</ul>">${n}</span>`;
+    document.getElementById("l-med").innerHTML = `<tr><th>Jogador</th><th>Pontos</th><th>🥇</th><th>🥈</th><th>🥉</th>
+      <th title="Em quantos dos ${podio.length} critérios o jogador fica entre os ${TOPN} melhores">Critérios no top ${TOPN}</th>
       <th>Partidas</th><th>Lidera em</th></tr>` + med.map(r => `<tr><td>${r.nome}</td><td class="n"><b>${r.pontos}</b></td>
-      <td class="n">${r.ouro}</td><td class="n">${r.prata}</td><td class="n">${r.bronze}</td><td class="n">${r.top}</td>
+      <td class="n">${comDica(r.ouro, `🥇 ${r.nome} é 1º em`, r.ouro_criterios)}</td>
+      <td class="n">${comDica(r.prata, `🥈 ${r.nome} é 2º em`, r.prata_criterios)}</td>
+      <td class="n">${comDica(r.bronze, `🥉 ${r.nome} é 3º em`, r.bronze_criterios)}</td>
+      <td class="n">${comDica(r.top, `${r.nome} no top ${TOPN} (posição)`, r.top_criterios)}</td>
       <td class="n">${br(r.partidas, 0)}</td><td>${r.criterios.join("; ")}</td></tr>`).join("");
     document.getElementById("l-nota").innerHTML = `<b>Pontos:</b> 1º lugar vale 3, 2º vale 2 e 3º vale 1; empates se desfazem por
       mais 1º lugares. Assim, quem é forte em muitos critérios passa à frente de um especialista imbatível em poucos (na base inteira,
-      Karlović lidera 4 critérios, todos de saque). A coluna <b>Top ${TOPN}</b> conta em quantos dos ${podio.length} critérios o
+      Karlović lidera 4 critérios, todos de saque). Passe o mouse sobre os números de medalhas para ver os critérios de cada uma. A coluna <b>Critérios no top ${TOPN}</b>
+      conta em quantos dos ${podio.length} critérios o
       jogador fica entre os ${TOPN} melhores: é a medida de quem é bom em <b>tudo</b>. Nas contagens (títulos, finais), quem tem zero
       não recebe medalha.`;
   }
@@ -180,6 +195,7 @@ ligarAbas(document.getElementById("area"), "#abas-j");
   document.getElementById("l-min").addEventListener("change", desenharLideres);
   ["l-a0", "l-a1"].forEach(id => document.getElementById(id).addEventListener("change", e => {
     LD[id.slice(2)] = +e.target.value; mudarAnos(LD, "l", id.slice(2)); desenharLideres(); }));
+  ligarDicas(document.getElementById("l-med"));
   desenharLideres();
 
   /* ================= ranking ================= */

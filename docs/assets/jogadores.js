@@ -159,17 +159,38 @@ function lideres(tab, CR, top = 10) {
     }
     podio.push(p);
     rk.slice(0, top).forEach((r, k) => {
-      if (!conta.has(r.nome)) conta.set(r.nome, { nome: r.nome, ouro: 0, prata: 0, bronze: 0, top: 0, criterios: [], partidas: r.partidas });
+      if (!conta.has(r.nome)) conta.set(r.nome, { nome: r.nome, ouro: 0, prata: 0, bronze: 0, top: 0, criterios: [], partidas: r.partidas,
+        ouro_criterios: [], prata_criterios: [], bronze_criterios: [], top_criterios: [] });
       const d = conta.get(r.nome);
-      if (k < 3) d[MEDALHAS[k]]++;
+      if (k < 3) { d[MEDALHAS[k]]++; d[MEDALHAS[k] + "_criterios"].push(c.nome); }
       if (k === 0) d.criterios.push(c.nome);
-      d.top++;
+      d.top++; d.top_criterios.push(`${c.nome} (${k + 1}º)`);
     });
   }
   const med = [...conta.values()];
   med.forEach(d => d.pontos = 3 * d.ouro + 2 * d.prata + d.bronze);
   med.sort((a, b) => b.pontos - a.pontos || b.ouro - a.ouro || b.prata - a.prata || b.top - a.top);
   return { podio, med };
+}
+
+/* dica flutuante: qualquer elemento com data-dica mostra o texto ao passar o mouse (ou ao tocar/focar).
+   Fica no <body>, então não é cortada pelas tabelas com rolagem. */
+function ligarDicas(raiz = document) {
+  let caixa = document.getElementById("dica-flutuante");
+  if (!caixa) { caixa = document.createElement("div"); caixa.id = "dica-flutuante"; caixa.setAttribute("role", "tooltip"); caixa.hidden = true; document.body.append(caixa); }
+  const mostrar = el => {
+    caixa.innerHTML = el.dataset.dica; caixa.hidden = false;
+    const r = el.getBoundingClientRect(), w = caixa.offsetWidth, h = caixa.offsetHeight;
+    let x = r.left + r.width / 2 - w / 2, y = r.top - h - 8;
+    if (y < 8) y = r.bottom + 8;
+    caixa.style.left = Math.max(8, Math.min(x, innerWidth - w - 8)) + "px"; caixa.style.top = y + "px";
+  };
+  const esconder = () => { caixa.hidden = true; };
+  raiz.addEventListener("mouseover", e => { const el = e.target.closest("[data-dica]"); if (el) mostrar(el); });
+  raiz.addEventListener("mouseout", e => { const el = e.target.closest("[data-dica]"); if (el && !el.contains(e.relatedTarget)) esconder(); });
+  raiz.addEventListener("focusin", e => { const el = e.target.closest("[data-dica]"); if (el) mostrar(el); });
+  raiz.addEventListener("focusout", esconder);
+  addEventListener("scroll", esconder, true);
 }
 
 /* caixa de busca com lista suspensa (substitui o <datalist>, que só mostra opções que batem com o texto

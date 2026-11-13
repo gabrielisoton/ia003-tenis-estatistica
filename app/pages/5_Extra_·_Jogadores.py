@@ -190,23 +190,29 @@ with aba_lid:
             fig.add_bar(y=topm.index, x=topm[medalha], orientation="h", name=f"{ICONE_MED[medalha]} {medalha}",
                         marker_color=CORES_MED[medalha],
                         text=[int(v) if v else "" for v in topm[medalha]], textposition="inside",
-                        hovertemplate="<b>%{y}</b><br>%{x} " + medalha + "<extra></extra>")
+                        customdata=["<br>• ".join(x) for x in topm[f"{medalha}_criterios"]],
+                        hovertemplate="<b>%{y}</b> · %{x} " + medalha + "<br>• %{customdata}<extra></extra>")
         fig.update_layout(barmode="stack", legend_traceorder="normal")
         fig.update_xaxes(title="critérios (1º, 2º e 3º lugares)", dtick=1, showgrid=True,
                          gridcolor="rgba(137,135,129,0.25)")
         fig.update_yaxes(showgrid=False)
         st.plotly_chart(g._layout(fig, "Medalhas por jogador (15 com mais pontos)", 560),
                         width="stretch")
+        st.caption("Passe o mouse sobre as barras do gráfico para ver em quais critérios vieram as medalhas.")
+        lista = lambda col: ["; ".join(x) for x in med[col]]  # noqa: E731
         tm = pd.DataFrame({
             "Jogador": med.index, "Pontos": med["pontos"], "🥇": med["ouro"], "🥈": med["prata"], "🥉": med["bronze"],
-            f"Top {TOP_MED}": med[f"top{TOP_MED}"], "Partidas": med["partidas"],
-            "Lidera em": ["; ".join(x) for x in med["criterios"]],
+            f"Critérios no top {TOP_MED}": med[f"top{TOP_MED}"], "Partidas": med["partidas"],
+            "🥇 em": lista("ouro_criterios"), "🥈 em": lista("prata_criterios"), "🥉 em": lista("bronze_criterios"),
         })
-        st.dataframe(tm, hide_index=True, width="stretch", height=420,
-                     column_config={"Lidera em": st.column_config.TextColumn(width="large")})
+        st.dataframe(tm, hide_index=True, width="stretch", height=420, column_config={
+            f"Critérios no top {TOP_MED}": st.column_config.NumberColumn(
+                help=f"Em quantos dos {len(pod)} critérios o jogador fica entre os {TOP_MED} melhores."),
+            **{c: st.column_config.TextColumn(width="large") for c in ("🥇 em", "🥈 em", "🥉 em")},
+        })
         st.caption(f"**Pontos:** 1º lugar vale 3, 2º vale 2 e 3º vale 1; empates se desfazem por mais 1º lugares. "
                    "Assim, quem é forte em muitos critérios passa à frente de um especialista imbatível em poucos "
-                   "(na base inteira, Karlović lidera 4 critérios, todos de saque). A coluna **Top "
+                   "(na base inteira, Karlović lidera 4 critérios, todos de saque). A coluna **Critérios no top "
                    f"{TOP_MED}** conta em quantos dos {len(pod)} critérios o jogador fica entre os {TOP_MED} melhores: "
                    "é a medida de quem é bom em **tudo**, não só excepcional em poucos aspectos. Nas contagens "
                    "(títulos, finais), quem tem zero não recebe medalha.")
