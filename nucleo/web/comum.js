@@ -142,6 +142,9 @@ function layoutBase(extra = {}) {
   }, extra);
 }
 function plot(el, dados, layout = {}) {
+  // com responsive: true o Plotly não estica a caixa do gráfico até a altura pedida: ela fica no min-height do CSS e
+  // o fim do gráfico (eixo x) vazava por baixo do texto seguinte. A caixa passa a ter a altura do próprio gráfico.
+  if (layout.height) (typeof el === "string" ? document.getElementById(el) : el).style.minHeight = layout.height + "px";
   return Plotly.react(el, dados, layoutBase(layout), PLOTLY_CONFIG);
 }
 

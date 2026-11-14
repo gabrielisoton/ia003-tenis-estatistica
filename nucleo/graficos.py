@@ -189,8 +189,10 @@ def faixa_ranking(serie: pd.Series) -> pd.Series:
 
 def _layout(fig: go.Figure, titulo: str, altura: int = 320) -> go.Figure:
     fig.update_layout(
-        # título preso ao topo: a legenda (logo acima do gráfico) não encosta no subtítulo de 2 linhas
-        title=dict(text=titulo, x=0, y=1, yref="container", yanchor="top", pad=dict(t=8), font=dict(size=15)),
+        # título preso ao topo: a legenda (logo acima do gráfico) não encosta no subtítulo de 2 linhas. Com yanchor
+        # "top" as linhas extras sobem, então cada <br> pede ~14 px a mais de folga (senão o título é cortado no alto)
+        title=dict(text=titulo, x=0, y=1, yref="container", yanchor="top", pad=dict(t=8 + 14 * titulo.count("<br>")),
+                   font=dict(size=15)),
         height=altura, margin=dict(l=10, r=10, t=90, b=10),
         legend=dict(orientation="h", y=1.02, yanchor="bottom", x=0, title=None),
         barcornerradius=4, bargap=0.25, bargroupgap=0.06,

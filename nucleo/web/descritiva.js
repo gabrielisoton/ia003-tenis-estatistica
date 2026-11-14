@@ -124,9 +124,11 @@ function montarFiltros(el, meta, f, aoMudar) {
 
 /* ---------------- gráficos ---------------- */
 // título preso ao topo do gráfico: a legenda e os rótulos de média/mediana ficam logo acima da área do gráfico, sem
-// encostar no subtítulo (o título centralizado na margem invadia a legenda quando havia população × amostra)
-const tituloNoTopo = text => ({ text, x: 0, xref: "container", y: 1, yref: "container", yanchor: "top", pad: { t: 10, l: 4 },
-  font: { size: 16, family: "Barlow Condensed" } });
+// encostar no subtítulo (o título centralizado na margem invadia a legenda quando havia população × amostra).
+// Com yanchor "top" o Plotly ancora pela 1ª linha e as demais sobem: cada <br> pede ~14 px a mais de folga, senão o
+// título é cortado no alto.
+const tituloNoTopo = text => ({ text, x: 0, xref: "container", y: 1, yref: "container", yanchor: "top",
+  pad: { t: 10 + 14 * (text.match(/<br>/g) || []).length, l: 4 }, font: { size: 16, family: "Barlow Condensed" } });
 function grafBarras(el, titulo, series, col) {
   const unica = series.length === 1;
   const traces = series.map(s => ({
